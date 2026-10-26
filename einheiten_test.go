@@ -89,3 +89,21 @@ func TestRaeumeZutat(t *testing.T) {
 		}
 	}
 }
+
+func TestNurOeffentlicheAdressen(t *testing.T) {
+	for _, a := range []string{"127.0.0.1:80", "10.0.0.1:443", "192.168.1.5:80", "169.254.169.254:80",
+		"[::1]:443", "[fd00::1]:80", "100.64.1.1:80", "0.0.0.0:80"} {
+		if nurOeffentlich("tcp", a, nil) == nil {
+			t.Errorf("%s sollte gesperrt sein", a)
+		}
+	}
+	if err := nurOeffentlich("tcp", "93.184.216.34:443", nil); err != nil {
+		t.Errorf("öffentliche Adresse gesperrt: %v", err)
+	}
+}
+
+func TestEinerVon(t *testing.T) {
+	if einerVon(" Vegan ", "vegan", "fleisch") != "vegan" || einerVon("<img>", "vegan") != "" {
+		t.Fatal("einerVon lässt Falsches durch")
+	}
+}

@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -64,26 +68,10 @@ func (d *Dienst) Wege(web http.Handler) http.Handler {
 	m.HandleFunc("PUT /api/regeln", d.geschuetzt(d.regelnSetzen))
 
 	m.Handle("/", web)
-	return protokoll(offenesNetz(m))
+	return protokoll(m)
 }
 
 // ---------- Rahmen ----------
-
-// Andere Oberflaechen (ein Skript, eine Kurzbefehl-App) duerfen die
-// Schnittstelle von einer anderen Herkunft aus ansprechen. Ohne Anmeldedaten,
-// also kein Zugriff, der nicht ohnehin offen im Netz steht.
-func offenesNetz(n http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Foodr")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		n.ServeHTTP(w, r)
-	})
-}
 
 func protokoll(n http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -107,14 +95,26 @@ func (d *Dienst) geschuetzt(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// Skripte schicken das Kennwort in X-Foodr, der Browser einen Keks mit einem
+// davon abgeleiteten Merkmal -- nie das Kennwort selbst.
 func (d *Dienst) erlaubt(r *http.Request) bool {
-	if r.Header.Get("X-Foodr") == d.kennwort {
+	if gleich(r.Header.Get("X-Foodr"), d.kennwort) {
 		return true
 	}
-	if k, err := r.Cookie("foodr"); err == nil && k.Value == d.kennwort {
+	if k, err := r.Cookie("foodr"); err == nil && gleich(k.Value, d.merkmal()) {
 		return true
 	}
 	return false
+}
+
+func (d *Dienst) merkmal() string {
+	m := hmac.New(sha256.New, []byte(d.kennwort))
+	m.Write([]byte("foodr-anmeldung"))
+	return hex.EncodeToString(m.Sum(nil))
+}
+
+func gleich(a, b string) bool {
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 func (d *Dienst) anmelden(w http.ResponseWriter, r *http.Request) {
@@ -125,12 +125,14 @@ func (d *Dienst) anmelden(w http.ResponseWriter, r *http.Request) {
 		fehler(w, http.StatusBadRequest, "unlesbar")
 		return
 	}
-	if d.kennwort == "" || rumpf.Kennwort != d.kennwort {
+	if d.kennwort == "" || !gleich(rumpf.Kennwort, d.kennwort) {
+		time.Sleep(time.Second) // Raten soll muehsam sein
 		fehler(w, http.StatusUnauthorized, "falsches Kennwort")
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: "foodr", Value: d.kennwort, Path: "/",
-		MaxAge: 60 * 60 * 24 * 365, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: "foodr", Value: d.merkmal(), Path: "/",
+		MaxAge: 60 * 60 * 24 * 365, HttpOnly: true, SameSite: http.SameSiteStrictMode,
+		Secure: r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"})
 	gib(w, map[string]any{"ok": true})
 }
 

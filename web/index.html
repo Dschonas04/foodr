@@ -143,7 +143,7 @@ async function ladeStatus() {
   zustand.status = await ruf('/api/status');
   zustand.woche = zustand.woche || zustand.status.woche;
   const s = zustand.status;
-  $('#kopf').textContent = `${s.rezepte} Rezepte · ${zahl(s.lebensmittel, 0)} Lebensmittel · Modell ${s.modell} · `
+  $('#kopf').textContent = `${esc(s.rezepte)} Rezepte · ${zahl(s.lebensmittel, 0)} Lebensmittel · Modell ${s.modell} · `
     + (s.ollama ? 'Ollama erreichbar' : 'Ollama offline');
 }
 
@@ -179,7 +179,7 @@ async function zeigeWoche() {
         <button class="tat" id="zurueck">›</button></div>
     </div>
     <div class="paar">
-      <div><label>Personen</label><input id="personen" type="number" min="1" value="${zustand.plan?.personen ?? regeln.personen ?? 2}"></div>
+      <div><label>Personen</label><input id="personen" type="number" min="1" value="${esc(zustand.plan?.personen ?? regeln.personen ?? 2)}"></div>
       <div><label>Wünsche an den Assistenten</label>
         <input id="wuensche" value="${esc(regeln.wuensche)}" placeholder="z. B. wenig Fleisch, Reste einplanen"></div>
     </div>
@@ -207,16 +207,16 @@ async function zeigeWoche() {
         <div class="zeile">
           <div>
             <div class="tag">${wochentag(t.tag)}</div>
-            <div class="titel ${t.gekocht ? 'ab' : ''} ${r ? 'klickbar' : ''}" ${r ? `data-oeffne="${r.id}"` : ''}>${esc(r ? r.titel : 'offen')}</div>
-            <div class="hinweis">${r ? `${r.kost} · ${r.dauer_min} min · ${r.aufwand}` : ''}
+            <div class="titel ${t.gekocht ? 'ab' : ''} ${r ? 'klickbar' : ''}" ${r ? `data-oeffne="${esc(r.id)}"` : ''}>${esc(r ? r.titel : 'offen')}</div>
+            <div class="hinweis">${r ? `${esc(r.kost)} · ${esc(r.dauer_min)} min · ${esc(r.aufwand)}` : ''}
               ${t.hinweis ? '<br>' + esc(t.hinweis) : ''}</div>
             ${w ? `<div class="hinweis">je Portion: ${kurzWerte(w.je_portion)}
               ${w.erfasst < w.zutaten ? `<span class="marke">${w.erfasst}/${w.zutaten} Zutaten erfasst</span>` : ''}</div>` : ''}
           </div>
           <div style="display:flex;flex-direction:column;gap:6px">
-            <button class="tat" data-tausch="${t.id}">tauschen</button>
-            <button class="tat" data-waehle="${t.id}">wählen</button>
-            <button class="tat" data-kochen="${t.id}" data-an="${t.gekocht ? 0 : 1}">${t.gekocht ? 'zurück' : 'gekocht'}</button>
+            <button class="tat" data-tausch="${esc(t.id)}">tauschen</button>
+            <button class="tat" data-waehle="${esc(t.id)}">wählen</button>
+            <button class="tat" data-kochen="${esc(t.id)}" data-an="${t.gekocht ? 0 : 1}">${t.gekocht ? 'zurück' : 'gekocht'}</button>
           </div>
         </div>
       </div>`));
@@ -270,7 +270,7 @@ async function waehleRezept(tagID) {
   const liste = () => {
     const q = $('#wsuche').value.toLowerCase();
     $('#wliste').innerHTML = rezepte.filter(r => r.titel.toLowerCase().includes(q))
-      .map(r => `<li data-id="${r.id}">${esc(r.titel)} <span class="hinweis">${r.kost} · ${r.dauer_min} min</span></li>`).join('');
+      .map(r => `<li data-id="${esc(r.id)}">${esc(r.titel)} <span class="hinweis">${esc(r.kost)} · ${esc(r.dauer_min)} min</span></li>`).join('');
   };
   liste();
   $('#wsuche').oninput = liste;
@@ -298,13 +298,13 @@ async function zeigeEinkauf() {
   const m = $('#inhalt');
   const plan = zustand.plan || (await ruf('/api/plan?woche=' + zustand.woche));
   if (!plan || plan.leer) { m.innerHTML = '<div class="karte leer">Erst einen Plan erzeugen.</div>'; return; }
-  const liste = await ruf(`/api/plan/${plan.id}/einkauf`);
+  const liste = await ruf(`/api/plan/${esc(plan.id)}/einkauf`);
   m.innerHTML = '';
   m.append(bau(`<div class="karte"><div class="tag">Einkauf für die Woche ab ${wochentag(plan.woche)}</div>
     <div id="posten"></div>
     <label>etwas ergänzen</label>
     <div class="paar"><input id="neuname" placeholder="Spülmittel"><button class="tat" id="neuposten">hinzufügen</button></div>
-    <div style="margin-top:10px"><a class="tag" href="/api/plan/${plan.id}/einkauf.txt" target="_blank">als Text teilen</a></div>
+    <div style="margin-top:10px"><a class="tag" href="/api/plan/${esc(plan.id)}/einkauf.txt" target="_blank">als Text teilen</a></div>
   </div>`));
   const ziel = $('#posten');
   let kategorie = '';
@@ -314,10 +314,10 @@ async function zeigeEinkauf() {
       ziel.append(bau(`<div class="kat">${esc(kategorie)}</div>`));
     }
     ziel.append(bau(`<ul><li class="zeile"><label style="display:flex;gap:10px;align-items:center;margin:0;color:var(--schrift)">
-      <input type="checkbox" style="width:auto" ${p.abgehakt ? 'checked' : ''} data-id="${p.id}">
+      <input type="checkbox" style="width:auto" ${p.abgehakt ? 'checked' : ''} data-id="${esc(p.id)}">
       <span class="${p.abgehakt ? 'ab' : ''}">${p.menge ? zahl(p.menge, 2) + ' ' + esc(p.einheit) + ' ' : ''}${esc(p.name)}</span>
     </label><span class="knoepfe"><button class="tat" data-vorrat="${esc(p.name)}" title="kommt künftig nicht mehr auf die Liste">im Vorrat</button>
-      <button class="tat" data-weg="${p.id}">✕</button></span></li></ul>`));
+      <button class="tat" data-weg="${esc(p.id)}">✕</button></span></li></ul>`));
   }
   ziel.querySelectorAll('input[type=checkbox]').forEach(k => k.onchange = async () => {
     await ruf('/api/einkauf/' + k.dataset.id, 'PATCH', { abgehakt: k.checked });
@@ -335,7 +335,7 @@ async function zeigeEinkauf() {
   const neu = async () => {
     const name = $('#neuname').value.trim();
     if (!name) return;
-    await ruf(`/api/plan/${plan.id}/einkauf`, 'POST', { name, menge: 0 });
+    await ruf(`/api/plan/${esc(plan.id)}/einkauf`, 'POST', { name, menge: 0 });
     zeigeEinkauf();
   };
   $('#neuposten').onclick = neu;
@@ -357,10 +357,10 @@ async function zeigeRezepte() {
     const q = $('#rsuche').value.toLowerCase();
     $('#rliste').innerHTML = zustand.rezepte
       .filter(r => !q || r.titel.toLowerCase().includes(q) || r.zutaten.some(z => z.name.toLowerCase().includes(q)))
-      .map(r => `<div class="karte klickbar" data-oeffne="${r.id}">
+      .map(r => `<div class="karte klickbar" data-oeffne="${esc(r.id)}">
         <div class="titel">${esc(r.titel)}</div>
-        <div class="hinweis">${r.kost} · ${r.dauer_min} min · ${r.portionen} Portionen
-          ${r.zuletzt_gekocht ? '· zuletzt ' + r.zuletzt_gekocht : '· noch nie gekocht'}</div></div>`).join('');
+        <div class="hinweis">${esc(r.kost)} · ${esc(r.dauer_min)} min · ${esc(r.portionen)} Portionen
+          ${r.zuletzt_gekocht ? '· zuletzt ' + esc(r.zuletzt_gekocht) : '· noch nie gekocht'}</div></div>`).join('');
     m.querySelectorAll('[data-oeffne]').forEach(k => k.onclick = () => zeigeRezept(k.dataset.oeffne));
   };
   liste();
@@ -374,7 +374,7 @@ async function zeigeRezept(id) {
   m.append(bau(`<div class="karte">
     <div class="zeile"><div>
       <div class="gross">${esc(r.titel)}</div>
-      <div class="hinweis">${r.kost} · ${r.art} · ${r.dauer_min} min · ${r.aufwand} · ${r.portionen} Portionen</div>
+      <div class="hinweis">${esc(r.kost)} · ${esc(r.art)} · ${esc(r.dauer_min)} min · ${esc(r.aufwand)} · ${esc(r.portionen)} Portionen</div>
       ${r.beschreibung ? `<div class="hinweis" style="color:var(--schrift)">${esc(r.beschreibung)}</div>` : ''}
     </div><div class="knoepfe"><button class="tat" id="zurueck">‹ alle</button><button class="tat" id="weg">löschen</button></div></div>
   </div>
@@ -494,7 +494,7 @@ function zeigeNeu() {
       const r = await ruf('/api/rezepte/einlesen', 'POST', { text: $('#roh').value });
       $('#stand2').textContent = '';
       $('#vorschau').innerHTML = `<div class="kat">${esc(r.titel)}</div>
-        <div class="hinweis">${r.kost} · ${r.dauer_min} min · ${r.portionen} Portionen</div>
+        <div class="hinweis">${esc(r.kost)} · ${esc(r.dauer_min)} min · ${esc(r.portionen)} Portionen</div>
         <ul>${r.zutaten.map(z => `<li>${z.menge ? zahl(z.menge, 2) : ''} ${esc(z.einheit)} ${esc(z.name)}</li>`).join('')}</ul>
         <ol>${r.schritte.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
         <button class="haupt" id="sichern">in den Pool</button>`;
@@ -534,7 +534,7 @@ async function zeigeLebensmittelSuche() {
     <div class="suchzeile">
       <input id="fsuche" placeholder="Lebensmittel suchen, z. B. Haferflocken" value="${esc(zustand.fsuche || '')}">
       <select id="fkat"><option value="">alle Gruppen</option>${zustand.kategorien.map(k =>
-        `<option value="${k.code}" ${zustand.fkat === k.code ? 'selected' : ''}>${esc(k.name)} (${k.anzahl})</option>`).join('')}</select>
+        `<option value="${esc(k.code)}" ${zustand.fkat === k.code ? 'selected' : ''}>${esc(k.name)} (${k.anzahl})</option>`).join('')}</select>
     </div>
     <div class="knoepfe" style="margin-top:10px"><button class="tat" id="eigenes">eigenes Lebensmittel anlegen</button></div>
   </div>
@@ -545,7 +545,7 @@ async function zeigeLebensmittelSuche() {
   const suche = async () => {
     zustand.fsuche = $('#fsuche').value;
     zustand.fkat = $('#fkat').value;
-    const t = await ruf(`/api/lebensmittel?grenze=100&q=${encodeURIComponent(zustand.fsuche)}&kategorie=${zustand.fkat}`);
+    const t = await ruf(`/api/lebensmittel?grenze=100&q=${encodeURIComponent(zustand.fsuche)}&kategorie=${encodeURIComponent(zustand.fkat)}`);
     $('#fliste').innerHTML = t.length ? t.map(l => `<tr class="klickbar" data-lm="${esc(l.id)}">
       <td>${esc(l.name)}${l.quelle === 'eigen' ? ' <span class="marke ton">eigen</span>' : ''}</td>
       <td class="zahl">${zahl(l.kern.ENERCC, 0)}</td><td class="zahl">${zahl(l.kern.PROT625)}</td>
@@ -595,10 +595,10 @@ function bearbeiteEigenes(l) {
   m.innerHTML = `<div class="karte">
     <div class="tag">${l ? 'Eigenes Lebensmittel ändern' : 'Eigenes Lebensmittel'}</div>
     <div class="paar"><div><label>Name</label><input id="ename" value="${esc(l?.name)}"></div>
-      <div><label>Gewicht eines Stücks in g (optional)</label><input id="estueck" type="number" min="0" value="${l?.stueck_g || ''}"></div></div>
+      <div><label>Gewicht eines Stücks in g (optional)</label><input id="estueck" type="number" min="0" value="${esc(l?.stueck_g || '')}"></div></div>
     <div class="tag" style="margin-top:14px">je 100 g – leer lassen, was unbekannt ist</div>
     <div class="paar">${KERN.map(([c, name, einheit]) => `<div><label>${name} (${einheit})</label>
-      <input type="number" min="0" step="any" data-wert="${c}" value="${l?.werte?.[c] ?? ''}"></div>`).join('')}</div>
+      <input type="number" min="0" step="any" data-wert="${c}" value="${esc(l?.werte?.[c] ?? '')}"></div>`).join('')}</div>
     <div class="knoepfe" style="margin-top:12px"><button class="haupt" id="esichern">speichern</button>
       <button class="tat" id="eab">abbrechen</button></div>
     <div class="meldung" id="estand"></div>
@@ -627,7 +627,7 @@ async function zeigeEinstellungen() {
   const s = zustand.status;
   const m = $('#inhalt');
   m.innerHTML = `<div class="karte"><div class="tag">Stand</div>
-    <div>${s.rezepte} Rezepte · ${zahl(s.lebensmittel, 0)} Lebensmittel</div>
+    <div>${esc(s.rezepte)} Rezepte · ${zahl(s.lebensmittel, 0)} Lebensmittel</div>
     <div>Modell ${esc(s.modell)} – ${s.ollama ? 'Ollama erreichbar' : 'Ollama offline'}</div>
     ${s.modelle?.length ? `<div class="hinweis">vorhanden: ${s.modelle.map(esc).join(', ')}</div>` : ''}
   </div>

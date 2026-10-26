@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/netip"
+	"net/url"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -82,16 +86,68 @@ var (
 	}
 )
 
-func holeSeite(ctx context.Context, url string) (string, error) {
-	anfrage, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+// Rezeptseiten liegen im offenen Netz. Adressen im eigenen Netz, auf dem
+// Rechner selbst oder in Metadaten-Bereichen holt der Dienst nicht; geprueft
+// wird beim Verbinden, damit eine DNS-Antwort nicht nachtraeglich umlenkt.
+var seitenKlient = &http.Client{
+	Timeout: 20 * time.Second,
+	Transport: &http.Transport{
+		Proxy:                 nil,
+		DialContext:           (&net.Dialer{Timeout: 10 * time.Second, Control: nurOeffentlich}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 15 * time.Second,
+	},
+	CheckRedirect: func(r *http.Request, via []*http.Request) error {
+		if len(via) >= 5 {
+			return fmt.Errorf("zu viele Weiterleitungen")
+		}
+		return erlaubteAdresse(r.URL)
+	},
+}
+
+func nurOeffentlich(_, adresse string, _ syscall.RawConn) error {
+	wirt, _, err := net.SplitHostPort(adresse)
+	if err != nil {
+		return err
+	}
+	ip, err := netip.ParseAddr(wirt)
+	if err != nil {
+		return err
+	}
+	ip = ip.Unmap()
+	if !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() ||
+		netip.MustParsePrefix("100.64.0.0/10").Contains(ip) || netip.MustParsePrefix("fc00::/7").Contains(ip) {
+		return fmt.Errorf("Adresse im eigenen Netz wird nicht abgerufen")
+	}
+	return nil
+}
+
+func erlaubteAdresse(u *url.URL) error {
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("nur http und https")
+	}
+	if p := u.Port(); p != "" && p != "80" && p != "443" {
+		return fmt.Errorf("nur die Standardports")
+	}
+	return nil
+}
+
+func holeSeite(ctx context.Context, adresse string) (string, error) {
+	u, err := url.Parse(adresse)
+	if err != nil {
+		return "", fmt.Errorf("Adresse unlesbar")
+	}
+	if err := erlaubteAdresse(u); err != nil {
+		return "", err
+	}
+	anfrage, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return "", err
 	}
 	anfrage.Header.Set("User-Agent", "Foodr/1.0 (Essensplaner)")
-	klient := &http.Client{Timeout: 20 * time.Second}
-	antwort, err := klient.Do(anfrage)
+	antwort, err := seitenKlient.Do(anfrage)
 	if err != nil {
-		return "", fmt.Errorf("Seite nicht erreichbar: %w", err)
+		return "", fmt.Errorf("Seite nicht abrufbar")
 	}
 	defer antwort.Body.Close()
 	if antwort.StatusCode != http.StatusOK {

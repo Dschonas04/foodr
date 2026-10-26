@@ -116,6 +116,9 @@ func (a *Ablage) SpeichereRezept(r Rezept) (Rezept, error) {
 // Fuellt fehlende Angaben mit brauchbaren Vorgaben, damit die KI und die
 // Oberflaeche nie auf leere Felder stossen.
 func ordne(r *Rezept) {
+	r.Art = einerVon(r.Art, "hauptgericht", "beilage", "fruehstueck", "nachtisch")
+	r.Kost = einerVon(r.Kost, "vegan", "vegetarisch", "fisch", "fleisch")
+	r.Aufwand = einerVon(r.Aufwand, "schnell", "mittel", "aufwendig")
 	if r.Portionen <= 0 {
 		r.Portionen = 2
 	}
@@ -418,6 +421,18 @@ func (a *Ablage) AnzahlRezepte() int {
 	var n int
 	_ = a.db.QueryRow(`SELECT count(*) FROM rezepte`).Scan(&n)
 	return n
+}
+
+// einerVon laesst nur bekannte Werte durch; alles andere wird leer und
+// bekommt in ordne() die Vorgabe.
+func einerVon(wert string, erlaubt ...string) string {
+	w := strings.ToLower(strings.TrimSpace(wert))
+	for _, e := range erlaubt {
+		if w == e {
+			return e
+		}
+	}
+	return ""
 }
 
 // ---------- Eigene Lebensmittel und Zuordnungen ----------
