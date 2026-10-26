@@ -115,12 +115,28 @@ func nurOeffentlich(_, adresse string, _ syscall.RawConn) error {
 		return err
 	}
 	ip = ip.Unmap()
-	if !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() ||
-		netip.MustParsePrefix("100.64.0.0/10").Contains(ip) || netip.MustParsePrefix("fc00::/7").Contains(ip) {
+	if !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() {
 		return fmt.Errorf("Adresse im eigenen Netz wird nicht abgerufen")
+	}
+	for _, p := range gesperrteNetze {
+		if p.Contains(ip) {
+			return fmt.Errorf("Adresse im eigenen Netz wird nicht abgerufen")
+		}
 	}
 	return nil
 }
+
+// Sonderbereiche, die IsPrivate nicht kennt, dazu IPv6-Uebersetzungen, in
+// denen eine interne IPv4-Adresse stecken kann (NAT64, 6to4, Teredo).
+var gesperrteNetze = func() []netip.Prefix {
+	var p []netip.Prefix
+	for _, s := range []string{"0.0.0.0/8", "100.64.0.0/10", "192.0.0.0/24", "192.0.2.0/24",
+		"198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/4", "240.0.0.0/4",
+		"fc00::/7", "64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "2001::/32", "2001:db8::/32"} {
+		p = append(p, netip.MustParsePrefix(s))
+	}
+	return p
+}()
 
 func erlaubteAdresse(u *url.URL) error {
 	if u.Scheme != "http" && u.Scheme != "https" {

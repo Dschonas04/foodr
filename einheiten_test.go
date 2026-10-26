@@ -92,7 +92,8 @@ func TestRaeumeZutat(t *testing.T) {
 
 func TestNurOeffentlicheAdressen(t *testing.T) {
 	for _, a := range []string{"127.0.0.1:80", "10.0.0.1:443", "192.168.1.5:80", "169.254.169.254:80",
-		"[::1]:443", "[fd00::1]:80", "100.64.1.1:80", "0.0.0.0:80"} {
+		"[::1]:443", "[fd00::1]:80", "100.64.1.1:80", "0.0.0.0:80", "198.18.0.1:80",
+		"[64:ff9b::a00:1]:80", "[2002:a00:1::1]:443", "240.0.0.1:80"} {
 		if nurOeffentlich("tcp", a, nil) == nil {
 			t.Errorf("%s sollte gesperrt sein", a)
 		}
