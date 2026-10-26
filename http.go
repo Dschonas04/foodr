@@ -16,10 +16,11 @@ import (
 )
 
 type Dienst struct {
-	ablage   *Ablage
-	planer   *Planer
-	katalog  *Katalog
-	kennwort string
+	ablage     *Ablage
+	planer     *Planer
+	katalog    *Katalog
+	kennwort   string
+	offAdresse string
 }
 
 func (d *Dienst) Wege(web http.Handler) http.Handler {
@@ -34,10 +35,13 @@ func (d *Dienst) Wege(web http.Handler) http.Handler {
 	m.HandleFunc("PUT /api/rezepte/{id}", d.geschuetzt(d.rezeptSpeichern))
 	m.HandleFunc("DELETE /api/rezepte/{id}", d.geschuetzt(d.rezeptLoeschen))
 	m.HandleFunc("POST /api/rezepte/einlesen", d.geschuetzt(d.rezeptEinlesen))
+	m.HandleFunc("GET /api/rezepte/naehrwerte", d.geschuetzt(d.alleRezeptNaehrwerte))
 	m.HandleFunc("GET /api/rezepte/{id}/naehrwerte", d.geschuetzt(d.rezeptNaehrwerte))
 
 	m.HandleFunc("GET /api/lebensmittel", d.geschuetzt(d.lebensmittelSuche))
 	m.HandleFunc("GET /api/lebensmittel/kategorien", d.geschuetzt(d.lebensmittelKategorien))
+	m.HandleFunc("GET /api/lebensmittel/quellen", d.geschuetzt(d.lebensmittelQuellen))
+	m.HandleFunc("POST /api/lebensmittel/import", d.geschuetzt(d.lebensmittelImport))
 	m.HandleFunc("GET /api/lebensmittel/{id}", d.geschuetzt(d.lebensmittel))
 	m.HandleFunc("POST /api/lebensmittel", d.geschuetzt(d.lebensmittelSpeichern))
 	m.HandleFunc("PUT /api/lebensmittel/{id}", d.geschuetzt(d.lebensmittelSpeichern))

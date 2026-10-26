@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Ablage: %v", err)
 	}
-	katalog, err := LadeKatalog()
+	katalog, err := LadeKatalog(ablage.db)
 	if err != nil {
 		log.Fatalf("Lebensmittel: %v", err)
 	}
@@ -53,9 +53,11 @@ func main() {
 	)
 	planer := &Planer{ablage: ablage, ki: ki}
 	dienst := &Dienst{ablage: ablage, planer: planer, katalog: katalog, kennwort: os.Getenv("FOODR_KENNWORT")}
-	if err := dienst.ladeEigene(); err != nil {
-		log.Fatalf("Eigene Lebensmittel: %v", err)
+	offAdresse := umgebung("FOODR_OFF_ADRESSE", offAdresse)
+	if umgebung("FOODR_OFF", "an") == "an" {
+		go katalog.HalteOFFAktuell(offAdresse)
 	}
+	dienst.offAdresse = offAdresse
 
 	web, err := fs.Sub(webDateien, "web")
 	if err != nil {

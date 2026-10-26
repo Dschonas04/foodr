@@ -1,23 +1,46 @@
 package main
 
 import (
+	"fmt"
 	"math"
+	"os"
+	"strings"
+	"sync"
 	"testing"
+)
+
+// Die Tests mit Datenbank brauchen ein leeres PostgreSQL in FOODR_TEST_DB,
+// etwa postgres://foodr:foodr@localhost:5432/foodr_test?sslmode=disable.
+var (
+	testKatalog     *Katalog
+	testKatalogFehl error
+	testKatalogEins sync.Once
 )
 
 func katalogFuerTest(t *testing.T) *Katalog {
 	t.Helper()
-	k, err := LadeKatalog()
-	if err != nil {
-		t.Fatal(err)
+	url := os.Getenv("FOODR_TEST_DB")
+	if url == "" {
+		t.Skip("FOODR_TEST_DB nicht gesetzt")
 	}
-	return k
+	testKatalogEins.Do(func() {
+		var a *Ablage
+		a, testKatalogFehl = OeffneAblage(url, schema)
+		if testKatalogFehl == nil {
+			testKatalog, testKatalogFehl = LadeKatalog(a.db)
+		}
+	})
+	if testKatalogFehl != nil {
+		t.Fatal(testKatalogFehl)
+	}
+	return testKatalog
 }
 
 func TestKatalogLaedtBLS(t *testing.T) {
 	k := katalogFuerTest(t)
-	if n := k.Anzahl(); n != 7140 {
-		t.Fatalf("%d Lebensmittel, erwartet 7140", n)
+	var n int
+	if err := k.db.QueryRow(`SELECT count(*) FROM lebensmittel WHERE quelle = 'bls'`).Scan(&n); err != nil || n != 7140 {
+		t.Fatalf("%d BLS-Lebensmittel, erwartet 7140 (%v)", n, err)
 	}
 	ei := k.Hole("E111100")
 	if ei == nil || ei.Name != "Hühnerei roh" {
@@ -69,21 +92,23 @@ func TestOrdneNimmtKeineGerichte(t *testing.T) {
 	}
 }
 
-func TestSucheZusammengeschrieben(t *testing.T) {
+func TestSuche(t *testing.T) {
 	k := katalogFuerTest(t)
-	if t1 := k.Suche("haferflocken", "", 1); len(t1) == 0 || t1[0].ID != "C133000" {
-		t.Fatalf("Haferflocken: %v", t1)
+	t1, _, err := k.Suche(Frage{Text: "haferflocken", Grenze: 3})
+	if err != nil || len(t1) == 0 || t1[0].ID != "C133000" {
+		t.Fatalf("Haferflocken: %v %v", t1, err)
 	}
-}
-
-func TestSucheOhneUmlaute(t *testing.T) {
-	k := katalogFuerTest(t)
-	t1 := k.Suche("hahnchen brust", "", 5)
-	if len(t1) == 0 || t1[0].Kategorie != "V" {
-		t.Fatalf("Hähnchenbrust nicht gefunden: %v", t1)
+	t2, _, err := k.Suche(Frage{Text: "hahnchen brust", Grenze: 5})
+	if err != nil || len(t2) == 0 || t2[0].Gruppe != "V" {
+		t.Fatalf("Hähnchenbrust: %v %v", t2, err)
 	}
-	if len(k.Suche("kase", "M", 0)) < 20 {
-		t.Fatal("zu wenig Käse")
+	t3, gesamt, err := k.Suche(Frage{Text: "kase", Gruppe: "M", Grenze: 10})
+	if err != nil || gesamt < 20 || len(t3) != 10 {
+		t.Fatalf("Käse: %d Treffer, %v", gesamt, err)
+	}
+	t4, _, err := k.Suche(Frage{Text: "100%_", Grenze: 5})
+	if err != nil || len(t4) != 0 {
+		t.Fatalf("Platzhalter werden nicht maskiert: %v %v", t4, err)
 	}
 }
 
@@ -115,23 +140,62 @@ func TestRechneRezept(t *testing.T) {
 
 func TestEigeneLebensmittel(t *testing.T) {
 	k := katalogFuerTest(t)
-	k.SetzeEigene([]EigenesLebensmittel{{ID: 3, Name: "Omas Pesto", StueckG: 0,
-		Werte: map[string]float64{"ENERCC": 480, "FAT": 50}}})
-	lm := k.Hole("eigen-3")
-	if lm == nil || lm.Kategorie != "eigen" {
+	id, err := k.SpeichereEigenes(&Lebensmittel{Name: "Omas Pesto", Werte: map[string]float64{"ENERCC": 480, "FAT": 50, "UNSINN": 3}})
+	if err != nil || !strings.HasPrefix(id, "eigen-") {
+		t.Fatalf("speichern: %q %v", id, err)
+	}
+	lm := k.Hole(id)
+	if lm == nil || lm.Quelle != "eigen" {
 		t.Fatal("eigenes Lebensmittel fehlt")
 	}
 	if v, ok := k.Wert(lm, "FAT"); !ok || v != 50 {
 		t.Fatalf("Fett %v", v)
 	}
-	if _, ok := k.Wert(lm, "PROT625"); ok {
-		t.Fatal("Eiweiß sollte fehlen")
+	if _, ok := lm.Werte["UNSINN"]; ok {
+		t.Fatal("unbekannter Nährstoff gespeichert")
 	}
-	if t1 := k.Suche("pesto", "", 1); len(t1) == 0 || t1[0].ID != "eigen-3" {
+	if t1, _, _ := k.Suche(Frage{Text: "pesto", Grenze: 1}); len(t1) == 0 || t1[0].ID != id {
 		t.Fatal("eigenes Pesto nicht zuerst")
 	}
-	k.SetzeEigene(nil)
-	if k.Hole("eigen-3") != nil {
-		t.Fatal("gelöschtes Lebensmittel noch da")
+	if _, err := k.SpeichereEigenes(&Lebensmittel{ID: "E111100", Name: "Ei"}); err == nil {
+		t.Fatal("BLS-Eintrag ließ sich überschreiben")
+	}
+	if err := k.LoescheEigenes(id); err != nil || k.Hole(id) != nil {
+		t.Fatalf("löschen: %v", err)
+	}
+}
+
+func TestOFFImport(t *testing.T) {
+	k := katalogFuerTest(t)
+	kopf := "code\tproduct_name\tbrands\tcountries_tags\tpnns_groups_2\tnutriscore_grade\tenergy-kcal_100g\tproteins_100g\tfat_100g\tcarbohydrates_100g\tsalt_100g\tvitamin-c_100g\n"
+	zeilen := []string{
+		"%s\tVollmilch 3,5 %%\tHofgut\ten:germany\tMilk and yogurt\ta\t64\t3.4\t3.5\t4.8\t3.2e-49\t0.001",
+		"%s\t\tOhne Namen\ten:germany\t\t\t100\t1\t1\t1\t0\t",
+		"%s\tKaputt\tX\ten:france\t\t\t2000\t1\t1\t1\t0\t",
+	}
+	var b strings.Builder
+	b.WriteString(kopf)
+	for i := 0; i < 1000; i++ {
+		for j, z := range zeilen {
+			b.WriteString(fmt.Sprintf(z, fmt.Sprintf("40%05d%d", i, j)) + "\n")
+		}
+	}
+	if err := k.leseOFF(strings.NewReader(b.String())); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	_ = k.db.QueryRow(`SELECT count(*) FROM produkte`).Scan(&n)
+	if n != 1000 {
+		t.Fatalf("%d Produkte, erwartet 1000", n)
+	}
+	t1, _, err := k.Suche(Frage{Text: "vollmilch hofgut", Quelle: "off", Grenze: 1})
+	if err != nil || len(t1) != 1 || t1[0].Gruppe != "M" || t1[0].Nutriscore != "A" || !t1[0].DACH {
+		t.Fatalf("Produkt: %+v %v", t1, err)
+	}
+	if c, ok := t1[0].Werte["VITC"]; !ok || c != 1 {
+		t.Fatalf("Vitamin C in mg: %v", c)
+	}
+	if k.Hole(t1[0].ID) == nil {
+		t.Fatal("Produkt nicht abrufbar")
 	}
 }

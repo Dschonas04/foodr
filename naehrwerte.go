@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -144,7 +146,7 @@ func (k *Katalog) Ordne(zutat string) *Lebensmittel {
 		}
 	}
 	for _, v := range versuche {
-		for _, lm := range k.Suche(v, "", 20) {
+		for _, lm := range k.kandidaten(v) {
 			if passtZurZutat(lm, v) {
 				return lm
 			}
@@ -153,19 +155,66 @@ func (k *Katalog) Ordne(zutat string) *Lebensmittel {
 	return nil
 }
 
+// kandidaten sucht nur unter Grundlebensmitteln (BLS) und eigenen; ein
+// Markenprodukt waehlt man von Hand.
+func (k *Katalog) kandidaten(text string) []*Lebensmittel {
+	woerter := strings.Fields(text)
+	if len(woerter) == 0 {
+		return nil
+	}
+	bed := []string{"quelle IN ('bls','eigen')"}
+	args := []any{}
+	for _, w := range woerter {
+		args = append(args, "%"+likeMaske.Replace(w)+"%")
+		bed = append(bed, fmt.Sprintf("such LIKE $%d", len(args)))
+	}
+	zeilen, err := k.db.Query(`SELECT `+alleSpalten+` FROM lebensmittel WHERE `+strings.Join(bed, " AND ")+
+		` LIMIT 500`, args...)
+	if err != nil {
+		return nil
+	}
+	defer zeilen.Close()
+	type treffer struct {
+		lm     *Lebensmittel
+		punkte float64
+	}
+	var liste []treffer
+	for zeilen.Next() {
+		lm, err := leseLebensmittel(zeilen)
+		if err != nil {
+			return nil
+		}
+		if p, ok := bewerteTreffer(lm, woerter); ok {
+			liste = append(liste, treffer{lm, p})
+		}
+	}
+	sort.SliceStable(liste, func(i, j int) bool {
+		if liste[i].punkte != liste[j].punkte {
+			return liste[i].punkte > liste[j].punkte
+		}
+		return liste[i].lm.ID < liste[j].lm.ID
+	})
+	raus := make([]*Lebensmittel, 0, 20)
+	for i := 0; i < len(liste) && i < 20; i++ {
+		raus = append(raus, liste[i].lm)
+	}
+	return raus
+}
+
 // Die Suche ist grosszuegig; fuer eine Zuordnung ohne Rueckfrage muss das
 // Lebensmittel mit der Zutat anfangen oder sie als ganzes Wort enthalten,
 // und es darf kein fertiges Gericht sein ("Dill" ist keine Dillcreme mit
 // Krabben, "Chili" kein Chili sin carne).
 func passtZurZutat(lm *Lebensmittel, zutat string) bool {
-	switch lm.Kategorie {
+	switch lm.Gruppe {
 	case "X", "Y":
 		return false
 	}
-	if strings.HasPrefix(lm.zusammen, strings.ReplaceAll(zutat, " ", "")) {
+	such := falte(lm.Name)
+	if strings.HasPrefix(strings.ReplaceAll(such, " ", ""), strings.ReplaceAll(zutat, " ", "")) {
 		return true
 	}
-	for _, w := range strings.Fields(lm.such) {
+	for _, w := range strings.Fields(such) {
 		if w == zutat {
 			return true
 		}
@@ -269,21 +318,26 @@ func leereWerte() map[string]float64 {
 
 // ---------- Ausgabe ----------
 
+// LebensmittelKurz ist eine Zeile in Suchlisten und Zuordnungen.
 type LebensmittelKurz struct {
-	ID        string             `json:"id"`
-	Name      string             `json:"name"`
-	Kategorie string             `json:"kategorie"`
-	Quelle    string             `json:"quelle"`
-	StueckG   float64            `json:"stueck_g,omitempty"`
-	Kern      map[string]float64 `json:"kern"`
+	ID         string             `json:"id"`
+	Quelle     string             `json:"quelle"`
+	Name       string             `json:"name"`
+	Marke      string             `json:"marke,omitempty"`
+	Gruppe     string             `json:"gruppe,omitempty"`
+	Menge      string             `json:"menge,omitempty"`
+	Nutriscore string             `json:"nutriscore,omitempty"`
+	Bild       string             `json:"bild,omitempty"`
+	StueckG    float64            `json:"stueck_g,omitempty"`
+	Kern       map[string]float64 `json:"kern"`
 }
 
 func (k *Katalog) Kurz(lm *Lebensmittel) *LebensmittelKurz {
-	kurz := &LebensmittelKurz{ID: lm.ID, Name: lm.Name, Kategorie: lm.Kategorie, Quelle: lm.Quelle,
-		StueckG: lm.StueckG, Kern: map[string]float64{}}
+	kurz := &LebensmittelKurz{ID: lm.ID, Quelle: lm.Quelle, Name: lm.Name, Marke: lm.Marke, Gruppe: lm.Gruppe,
+		Menge: lm.Menge, Nutriscore: lm.Nutriscore, Bild: lm.Bild, StueckG: lm.StueckG, Kern: map[string]float64{}}
 	for _, c := range Kernwerte {
 		if v, ok := k.Wert(lm, c); ok {
-			kurz.Kern[c] = v
+			kurz.Kern[c] = rundeSig(v)
 		}
 	}
 	return kurz
@@ -291,8 +345,8 @@ func (k *Katalog) Kurz(lm *Lebensmittel) *LebensmittelKurz {
 
 type StoffWert struct {
 	Naehrstoff
-	Wert *float64 `json:"wert"` // nil = nicht bestimmt
-	Spur bool     `json:"spur,omitempty"`
+	Wert float64 `json:"wert"`
+	Spur bool    `json:"spur,omitempty"`
 }
 
 type StoffGruppe struct {
@@ -300,36 +354,40 @@ type StoffGruppe struct {
 	Stoffe []StoffWert `json:"stoffe"`
 }
 
+// LebensmittelVoll ist die Detailansicht: alles, was bekannt ist.
 type LebensmittelVoll struct {
-	LebensmittelKurz
-	NameEN        string             `json:"name_en,omitempty"`
-	KategorieName string             `json:"kategorie_name"`
-	Gruppen       []StoffGruppe      `json:"gruppen"`
-	Werte         map[string]float64 `json:"werte"`
+	*Lebensmittel
+	GruppeName string             `json:"gruppe_name"`
+	QuelleName string             `json:"quelle_name"`
+	Lizenz     string             `json:"lizenz,omitempty"`
+	Adresse    string             `json:"adresse,omitempty"`
+	Kern       map[string]float64 `json:"kern"`
+	Gruppen    []StoffGruppe      `json:"gruppen"`
+	Werte      map[string]float64 `json:"werte"`
 }
 
 func (k *Katalog) Voll(lm *Lebensmittel) LebensmittelVoll {
-	v := LebensmittelVoll{LebensmittelKurz: *k.Kurz(lm), NameEN: lm.NameEN,
-		KategorieName: kategorieName(lm.Kategorie), Werte: map[string]float64{}}
-	stelle := map[string]int{}
-	for i, s := range k.stoffe {
-		w := lm.werte[i]
-		sw := StoffWert{Naehrstoff: s}
-		switch {
-		case w != w:
-		case w < 0:
-			sw.Spur = true
-			null := 0.0
-			sw.Wert = &null
-			v.Werte[s.Code] = 0
-		default:
-			z := float64(w)
-			sw.Wert = &z
-			v.Werte[s.Code] = z
+	v := LebensmittelVoll{Lebensmittel: lm, GruppeName: kategorieName(lm.Gruppe), Kern: k.Kurz(lm).Kern,
+		Werte: map[string]float64{}}
+	for _, q := range Quellen {
+		if q.Code == lm.Quelle {
+			v.QuelleName, v.Lizenz, v.Adresse = q.Name, q.Lizenz, q.Adresse
 		}
-		if sw.Wert == nil {
+	}
+	if lm.Quelle == "off" && lm.Barcode != "" {
+		v.Adresse = "https://world.openfoodfacts.org/product/" + lm.Barcode
+	}
+	stelle := map[string]int{}
+	for _, s := range k.stoffe {
+		w, ok := lm.Werte[s.Code]
+		if !ok {
 			continue
 		}
+		sw := StoffWert{Naehrstoff: s, Wert: w}
+		if w < 0 {
+			sw.Wert, sw.Spur = 0, true
+		}
+		v.Werte[s.Code] = sw.Wert
 		g, ok := stelle[s.Gruppe]
 		if !ok {
 			g = len(v.Gruppen)

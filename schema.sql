@@ -60,14 +60,28 @@ CREATE TABLE IF NOT EXISTS regeln (
     wert       TEXT NOT NULL
 );
 
--- Eigene Lebensmittel neben dem BLS, Werte je 100 g als {Naehrstoffcode: Wert}.
-CREATE TABLE IF NOT EXISTS lebensmittel (
-    id        SERIAL PRIMARY KEY,
-    name      TEXT NOT NULL,
-    stueck_g  NUMERIC NOT NULL DEFAULT 0,
-    werte     JSONB NOT NULL DEFAULT '{}',
-    angelegt  TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Lebensmitteldatenbank. Die Tabellen lebensmittel (BLS und eigene) und
+-- produkte (Open Food Facts) legt der Dienst selbst an, siehe lebensmittel.go.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE TABLE IF NOT EXISTS naehrstoffe (
+    code    TEXT PRIMARY KEY,
+    name    TEXT NOT NULL,
+    name_en TEXT NOT NULL DEFAULT '',
+    einheit TEXT NOT NULL,
+    gruppe  TEXT NOT NULL,
+    reihe   INT NOT NULL DEFAULT 0
 );
+
+-- Stand je Quelle; die Anzahl steht hier, damit niemand Millionen Zeilen zaehlt.
+CREATE TABLE IF NOT EXISTS lm_quellen (
+    quelle     TEXT PRIMARY KEY,
+    stand      TEXT NOT NULL DEFAULT '',
+    anzahl     INT NOT NULL DEFAULT 0,
+    eingelesen TIMESTAMPTZ
+);
+
+CREATE SEQUENCE IF NOT EXISTS eigen_nr;
 
 -- Von Hand festgelegt: welche Zutat welches Lebensmittel ist. Gilt fuer alle
 -- Rezepte; der Schluessel ist der gefaltete Zutatenname.

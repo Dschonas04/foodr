@@ -437,67 +437,6 @@ func einerVon(wert string, erlaubt ...string) string {
 
 // ---------- Eigene Lebensmittel und Zuordnungen ----------
 
-type EigenesLebensmittel struct {
-	ID      int                `json:"id"`
-	Name    string             `json:"name"`
-	StueckG float64            `json:"stueck_g"`
-	Werte   map[string]float64 `json:"werte"`
-}
-
-func (a *Ablage) EigeneLebensmittel() ([]EigenesLebensmittel, error) {
-	zeilen, err := a.db.Query(`SELECT id, name, stueck_g, werte FROM lebensmittel ORDER BY name`)
-	if err != nil {
-		return nil, err
-	}
-	defer zeilen.Close()
-	liste := []EigenesLebensmittel{}
-	for zeilen.Next() {
-		var e EigenesLebensmittel
-		var werte []byte
-		if err := zeilen.Scan(&e.ID, &e.Name, &e.StueckG, &werte); err != nil {
-			return nil, err
-		}
-		if err := json.Unmarshal(werte, &e.Werte); err != nil {
-			return nil, err
-		}
-		liste = append(liste, e)
-	}
-	return liste, zeilen.Err()
-}
-
-func (a *Ablage) SpeichereLebensmittel(e EigenesLebensmittel) (int, error) {
-	e.Name = strings.TrimSpace(e.Name)
-	if e.Name == "" {
-		return 0, fmt.Errorf("Name fehlt")
-	}
-	if e.Werte == nil {
-		e.Werte = map[string]float64{}
-	}
-	werte, err := json.Marshal(e.Werte)
-	if err != nil {
-		return 0, err
-	}
-	if e.ID == 0 {
-		err = a.db.QueryRow(`INSERT INTO lebensmittel (name, stueck_g, werte) VALUES ($1,$2,$3) RETURNING id`,
-			e.Name, e.StueckG, werte).Scan(&e.ID)
-		return e.ID, err
-	}
-	res, err := a.db.Exec(`UPDATE lebensmittel SET name=$2, stueck_g=$3, werte=$4 WHERE id=$1`,
-		e.ID, e.Name, e.StueckG, werte)
-	if err != nil {
-		return 0, err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return 0, fmt.Errorf("nicht gefunden")
-	}
-	return e.ID, nil
-}
-
-func (a *Ablage) LoescheLebensmittel(id int) error {
-	_, err := a.db.Exec(`DELETE FROM lebensmittel WHERE id = $1`, id)
-	return err
-}
-
 func (a *Ablage) Zuordnungen() (map[string]Zuordnung, error) {
 	zeilen, err := a.db.Query(`SELECT zutat, lebensmittel, stueck_g FROM zuordnung`)
 	if err != nil {

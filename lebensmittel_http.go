@@ -12,32 +12,42 @@ import (
 func (d *Dienst) lebensmittelSuche(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	grenze, _ := strconv.Atoi(q.Get("grenze"))
-	if grenze <= 0 || grenze > 200 {
-		grenze = 50
+	ab, _ := strconv.Atoi(q.Get("ab"))
+	liste, gesamt, err := d.katalog.Suche(Frage{Text: q.Get("q"), Quelle: q.Get("quelle"),
+		Gruppe: q.Get("gruppe"), DACH: q.Get("dach") == "1", Ordnen: q.Get("ordnen"), Grenze: grenze, Ab: ab})
+	if err != nil {
+		fehler(w, 500, err.Error())
+		return
 	}
-	treffer := d.katalog.Suche(q.Get("q"), q.Get("kategorie"), grenze)
-	raus := make([]*LebensmittelKurz, len(treffer))
-	for i, lm := range treffer {
+	raus := make([]*LebensmittelKurz, len(liste))
+	for i, lm := range liste {
 		raus[i] = d.katalog.Kurz(lm)
+	}
+	gib(w, map[string]any{"treffer": raus, "gesamt": gesamt, "mehr": gesamt > ab+len(raus)})
+}
+
+func (d *Dienst) lebensmittelKategorien(w http.ResponseWriter, r *http.Request) {
+	type kat struct {
+		Code string `json:"code"`
+		Name string `json:"name"`
+	}
+	raus := []kat{}
+	for _, k := range Kategorien {
+		raus = append(raus, kat{k.Code, k.Name})
 	}
 	gib(w, raus)
 }
 
-func (d *Dienst) lebensmittelKategorien(w http.ResponseWriter, r *http.Request) {
-	anzahl := map[string]int{}
-	for _, lm := range d.katalog.Suche("", "", 0) {
-		anzahl[lm.Kategorie]++
+func (d *Dienst) lebensmittelQuellen(w http.ResponseWriter, r *http.Request) {
+	gib(w, map[string]any{"quellen": d.katalog.Bestaende(), "import": d.katalog.Import.Kopie()})
+}
+
+func (d *Dienst) lebensmittelImport(w http.ResponseWriter, r *http.Request) {
+	if !d.katalog.StarteOFF(d.offAdresse) {
+		fehler(w, 409, "Ein Import läuft schon.")
+		return
 	}
-	type kat struct {
-		Code   string `json:"code"`
-		Name   string `json:"name"`
-		Anzahl int    `json:"anzahl"`
-	}
-	raus := []kat{}
-	for _, k := range Kategorien {
-		raus = append(raus, kat{k.Code, k.Name, anzahl[k.Code]})
-	}
-	gib(w, raus)
+	d.lebensmittelQuellen(w, r)
 }
 
 func (d *Dienst) lebensmittel(w http.ResponseWriter, r *http.Request) {
@@ -54,73 +64,58 @@ func (d *Dienst) naehrstoffe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Dienst) lebensmittelSpeichern(w http.ResponseWriter, r *http.Request) {
-	var e EigenesLebensmittel
-	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
+	var rumpf struct {
+		Name    string             `json:"name"`
+		Marke   string             `json:"marke"`
+		Gruppe  string             `json:"gruppe"`
+		StueckG float64            `json:"stueck_g"`
+		Werte   map[string]float64 `json:"werte"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&rumpf); err != nil {
 		fehler(w, 400, "unlesbar: "+err.Error())
 		return
 	}
-	e.ID = 0
-	if id := r.PathValue("id"); id != "" {
-		n, ok := eigeneNummer(id)
-		if !ok {
-			fehler(w, 403, "Lebensmittel aus dem BLS lassen sich nicht ändern")
-			return
-		}
-		e.ID = n
+	if kategorieName(rumpf.Gruppe) == "" {
+		rumpf.Gruppe = ""
 	}
-	for code, v := range e.Werte {
-		if _, bekannt := d.katalog.stelle[code]; !bekannt || v < 0 {
-			delete(e.Werte, code)
-		}
-	}
-	id, err := d.ablage.SpeichereLebensmittel(e)
+	lm := &Lebensmittel{ID: r.PathValue("id"), Name: rumpf.Name, Marke: strings.TrimSpace(rumpf.Marke),
+		Gruppe: rumpf.Gruppe, StueckG: rumpf.StueckG, Werte: rumpf.Werte}
+	id, err := d.katalog.SpeichereEigenes(lm)
 	if err != nil {
 		fehler(w, 400, err.Error())
 		return
 	}
-	if err := d.ladeEigene(); err != nil {
-		fehler(w, 500, err.Error())
-		return
-	}
-	gib(w, d.katalog.Voll(d.katalog.Hole(eigeneID(id))))
+	gib(w, d.katalog.Voll(d.katalog.Hole(id)))
 }
 
 func (d *Dienst) lebensmittelLoeschen(w http.ResponseWriter, r *http.Request) {
-	n, ok := eigeneNummer(r.PathValue("id"))
-	if !ok {
-		fehler(w, 403, "Lebensmittel aus dem BLS lassen sich nicht löschen")
-		return
-	}
-	if err := d.ablage.LoescheLebensmittel(n); err != nil {
-		fehler(w, 500, err.Error())
-		return
-	}
-	if err := d.ladeEigene(); err != nil {
-		fehler(w, 500, err.Error())
+	if err := d.katalog.LoescheEigenes(r.PathValue("id")); err != nil {
+		fehler(w, 403, err.Error())
 		return
 	}
 	gib(w, map[string]any{"ok": true})
 }
 
-func eigeneNummer(id string) (int, bool) {
-	rest, ok := strings.CutPrefix(id, "eigen-")
-	if !ok {
-		return 0, false
-	}
-	n, err := strconv.Atoi(rest)
-	return n, err == nil && n > 0
-}
-
-func (d *Dienst) ladeEigene() error {
-	eigene, err := d.ablage.EigeneLebensmittel()
-	if err != nil {
-		return err
-	}
-	d.katalog.SetzeEigene(eigene)
-	return nil
-}
-
 // ---------- Naehrwerte und Zuordnung ----------
+
+// Je Rezept die Werte einer Portion, fuer die Rezeptliste.
+func (d *Dienst) alleRezeptNaehrwerte(w http.ResponseWriter, r *http.Request) {
+	rezepte, err := d.ablage.Rezepte()
+	if err != nil {
+		fehler(w, 500, err.Error())
+		return
+	}
+	vonHand, err := d.ablage.Zuordnungen()
+	if err != nil {
+		fehler(w, 500, err.Error())
+		return
+	}
+	raus := map[int]map[string]float64{}
+	for _, rez := range rezepte {
+		raus[rez.ID] = d.katalog.Rechne(rez, vonHand).JePortion
+	}
+	gib(w, raus)
+}
 
 func (d *Dienst) rezeptNaehrwerte(w http.ResponseWriter, r *http.Request) {
 	rez, err := d.ablage.Rezept(nummer(r, "id"))

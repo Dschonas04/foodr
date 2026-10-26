@@ -7,6 +7,12 @@ services:
       POSTGRES_DB: foodr
       POSTGRES_USER: foodr
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-foodr}
+    # Mit Open Food Facts liegen einige Millionen Zeilen in der Datenbank;
+    # die Vorgaben von PostgreSQL sind fuer ein paar Hundert MB gedacht.
+    command: >
+      postgres -c shared_buffers=1GB -c effective_cache_size=4GB -c work_mem=32MB
+               -c maintenance_work_mem=1GB -c max_wal_size=4GB -c random_page_cost=1.1
+    shm_size: 1gb
     volumes:
       - foodr_db:/var/lib/postgresql/data
     healthcheck:
@@ -26,6 +32,7 @@ services:
       FOODR_DB: postgres://foodr:${POSTGRES_PASSWORD:-foodr}@db:5432/foodr?sslmode=disable
       FOODR_KENNWORT: ${FOODR_KENNWORT:-}
       FOODR_AUTOPLAN: ${FOODR_AUTOPLAN:-an}
+      FOODR_OFF: ${FOODR_OFF:-an}
       OLLAMA_ADRESSE: ${OLLAMA_ADRESSE:-http://host.docker.internal:11434}
       OLLAMA_MODELL: ${OLLAMA_MODELL:-qwen2.5:7b-instruct}
       PORT: '8300'
