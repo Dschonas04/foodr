@@ -1,0 +1,718 @@
+[
+ {
+  "titel": "Spaghetti Bolognese",
+  "portionen": 4,
+  "dauer_min": 45,
+  "kost": "fleisch",
+  "aufwand": "mittel",
+  "etiketten": [
+   "Klassiker",
+   "Nudeln"
+  ],
+  "zutaten": [
+   {
+    "menge": 500,
+    "einheit": "g",
+    "name": "Hackfleisch gemischt"
+   },
+   {
+    "menge": 500,
+    "einheit": "g",
+    "name": "Spaghetti"
+   },
+   {
+    "menge": 400,
+    "einheit": "g",
+    "name": "passierte Tomaten"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Zwiebel"
+   },
+   {
+    "menge": 2,
+    "einheit": "Zehe",
+    "name": "Knoblauch"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Karotte"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Stange Sellerie"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Tomatenmark"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Olivenöl"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Oregano"
+   },
+   {
+    "menge": 50,
+    "einheit": "g",
+    "name": "Parmesan"
+   }
+  ],
+  "schritte": [
+   "Zwiebel, Knoblauch, Karotte und Sellerie fein würfeln.",
+   "Gemüse in Olivenöl anbraten, Hackfleisch zugeben und krümelig braten.",
+   "Tomatenmark kurz mitrösten, passierte Tomaten und Oregano zugeben.",
+   "Mindestens 25 Minuten offen köcheln lassen, salzen und pfeffern.",
+   "Spaghetti in Salzwasser bissfest kochen und mit der Sauce und Parmesan servieren."
+  ],
+  "hinweise": "Die Sauce wird besser, je länger sie zieht — doppelte Menge einfrieren lohnt."
+ },
+ {
+  "titel": "Linsen-Kokos-Curry",
+  "portionen": 4,
+  "dauer_min": 30,
+  "kost": "vegan",
+  "aufwand": "schnell",
+  "etiketten": [
+   "Eintopf",
+   "Vorratskammer"
+  ],
+  "zutaten": [
+   {
+    "menge": 250,
+    "einheit": "g",
+    "name": "rote Linsen"
+   },
+   {
+    "menge": 400,
+    "einheit": "ml",
+    "name": "Kokosmilch"
+   },
+   {
+    "menge": 400,
+    "einheit": "g",
+    "name": "stückige Tomaten"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Zwiebel"
+   },
+   {
+    "menge": 2,
+    "einheit": "Zehe",
+    "name": "Knoblauch"
+   },
+   {
+    "menge": 20,
+    "einheit": "g",
+    "name": "Ingwer"
+   },
+   {
+    "menge": 2,
+    "einheit": "TL",
+    "name": "Currypulver"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Kreuzkümmel"
+   },
+   {
+    "menge": 250,
+    "einheit": "g",
+    "name": "Basmatireis"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Limette"
+   }
+  ],
+  "schritte": [
+   "Zwiebel, Knoblauch und Ingwer anbraten, Gewürze kurz mitrösten.",
+   "Linsen, Tomaten und Kokosmilch zugeben, 20 Minuten weich köcheln.",
+   "Mit Salz und Limettensaft abschmecken, mit Reis servieren."
+  ],
+  "hinweise": "Hält sich drei Tage im Kühlschrank und wird aufgewärmt besser."
+ },
+ {
+  "titel": "Ofengemüse mit Feta",
+  "portionen": 2,
+  "dauer_min": 50,
+  "kost": "vegetarisch",
+  "aufwand": "mittel",
+  "saison": [
+   "Herbst",
+   "Winter"
+  ],
+  "etiketten": [
+   "Blech",
+   "wenig Arbeit"
+  ],
+  "zutaten": [
+   {
+    "menge": 500,
+    "einheit": "g",
+    "name": "Kartoffel"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Zucchini"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Paprika"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Rote Zwiebel"
+   },
+   {
+    "menge": 200,
+    "einheit": "g",
+    "name": "Feta"
+   },
+   {
+    "menge": 4,
+    "einheit": "EL",
+    "name": "Olivenöl"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Paprikapulver"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Thymian"
+   }
+  ],
+  "schritte": [
+   "Gemüse in mundgerechte Stücke schneiden.",
+   "Mit Öl und Gewürzen mischen, auf ein Blech geben.",
+   "Bei 200 Grad 35 Minuten backen, Feta die letzten 10 Minuten darüber bröseln."
+  ],
+  "hinweise": "Alles auf ein Blech: wenig Abwasch."
+ },
+ {
+  "titel": "Hähnchen-Reispfanne",
+  "portionen": 3,
+  "dauer_min": 25,
+  "kost": "fleisch",
+  "aufwand": "schnell",
+  "etiketten": [
+   "Pfanne",
+   "schnell"
+  ],
+  "zutaten": [
+   {
+    "menge": 500,
+    "einheit": "g",
+    "name": "Hähnchenbrust"
+   },
+   {
+    "menge": 250,
+    "einheit": "g",
+    "name": "Reis"
+   },
+   {
+    "menge": 300,
+    "einheit": "g",
+    "name": "Brokkoli"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Karotte"
+   },
+   {
+    "menge": 3,
+    "einheit": "EL",
+    "name": "Sojasauce"
+   },
+   {
+    "menge": 1,
+    "einheit": "EL",
+    "name": "Sesam"
+   },
+   {
+    "menge": 20,
+    "einheit": "g",
+    "name": "Ingwer"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Öl"
+   }
+  ],
+  "schritte": [
+   "Reis aufsetzen.",
+   "Hähnchen in Streifen scharf anbraten, herausnehmen.",
+   "Gemüse in derselben Pfanne 5 Minuten braten, Ingwer und Sojasauce zugeben.",
+   "Hähnchen und Reis unterheben, mit Sesam bestreuen."
+  ]
+ },
+ {
+  "titel": "Kürbissuppe",
+  "portionen": 4,
+  "dauer_min": 40,
+  "kost": "vegetarisch",
+  "aufwand": "mittel",
+  "saison": [
+   "Herbst"
+  ],
+  "etiketten": [
+   "Suppe"
+  ],
+  "zutaten": [
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Hokkaidokürbis"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Kartoffel"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Zwiebel"
+   },
+   {
+    "menge": 200,
+    "einheit": "ml",
+    "name": "Sahne"
+   },
+   {
+    "menge": 1,
+    "einheit": "l",
+    "name": "Gemüsebrühe"
+   },
+   {
+    "menge": 20,
+    "einheit": "g",
+    "name": "Ingwer"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Kürbiskernöl"
+   }
+  ],
+  "schritte": [
+   "Kürbis und Kartoffeln würfeln, Zwiebel anbraten.",
+   "Alles mit Brühe 25 Minuten kochen.",
+   "Fein pürieren, Sahne einrühren, mit Kürbiskernöl anrichten."
+  ],
+  "hinweise": "Kürbis muss nicht geschält werden."
+ },
+ {
+  "titel": "Lachs aus dem Ofen mit Kartoffeln",
+  "portionen": 2,
+  "dauer_min": 40,
+  "kost": "fisch",
+  "aufwand": "mittel",
+  "etiketten": [
+   "Ofen"
+  ],
+  "zutaten": [
+   {
+    "menge": 300,
+    "einheit": "g",
+    "name": "Lachsfilet"
+   },
+   {
+    "menge": 600,
+    "einheit": "g",
+    "name": "Kartoffel"
+   },
+   {
+    "menge": 200,
+    "einheit": "g",
+    "name": "Brokkoli"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Zitrone"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Olivenöl"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Dill"
+   },
+   {
+    "menge": 100,
+    "einheit": "g",
+    "name": "Crème fraîche"
+   }
+  ],
+  "schritte": [
+   "Kartoffeln in Scheiben 20 Minuten bei 200 Grad vorbacken.",
+   "Lachs mit Zitrone und Dill darauflegen, weitere 15 Minuten backen.",
+   "Brokkoli dampfgaren und mit Crème fraîche servieren."
+  ],
+  "hinweise": "Lachs am Vortag aus dem Gefrierfach nehmen."
+ },
+ {
+  "titel": "Chili sin Carne",
+  "portionen": 4,
+  "dauer_min": 45,
+  "kost": "vegan",
+  "aufwand": "mittel",
+  "etiketten": [
+   "Eintopf",
+   "Meal Prep"
+  ],
+  "zutaten": [
+   {
+    "menge": 400,
+    "einheit": "g",
+    "name": "Kidneybohnen"
+   },
+   {
+    "menge": 400,
+    "einheit": "g",
+    "name": "Mais"
+   },
+   {
+    "menge": 800,
+    "einheit": "g",
+    "name": "stückige Tomaten"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Paprika"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Zwiebel"
+   },
+   {
+    "menge": 200,
+    "einheit": "g",
+    "name": "Sojaschnetzel"
+   },
+   {
+    "menge": 2,
+    "einheit": "TL",
+    "name": "Kreuzkümmel"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Chiliflocken"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Tomatenmark"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Zartbitterschokolade"
+   }
+  ],
+  "schritte": [
+   "Zwiebel und Paprika anbraten, Sojaschnetzel und Gewürze zugeben.",
+   "Tomaten, Bohnen und Mais zugeben, 25 Minuten köcheln.",
+   "Zum Schluss ein Stück Schokolade einrühren, kräftig salzen."
+  ]
+ },
+ {
+  "titel": "Flammkuchen",
+  "portionen": 2,
+  "dauer_min": 25,
+  "kost": "fleisch",
+  "aufwand": "schnell",
+  "etiketten": [
+   "Freitag",
+   "Blech"
+  ],
+  "zutaten": [
+   {
+    "menge": 1,
+    "einheit": "Packung",
+    "name": "Flammkuchenteig"
+   },
+   {
+    "menge": 200,
+    "einheit": "g",
+    "name": "Schmand"
+   },
+   {
+    "menge": 150,
+    "einheit": "g",
+    "name": "Speckwürfel"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Zwiebel"
+   },
+   {
+    "menge": 1,
+    "einheit": "Prise",
+    "name": "Muskat"
+   }
+  ],
+  "schritte": [
+   "Teig ausrollen, Schmand mit Salz, Pfeffer und Muskat verrühren und aufstreichen.",
+   "Zwiebelringe und Speck verteilen.",
+   "Bei 230 Grad 12 Minuten backen."
+  ]
+ },
+ {
+  "titel": "Gnocchi-Pfanne mit Spinat",
+  "portionen": 2,
+  "dauer_min": 20,
+  "kost": "vegetarisch",
+  "aufwand": "schnell",
+  "etiketten": [
+   "schnell",
+   "Pfanne"
+  ],
+  "zutaten": [
+   {
+    "menge": 500,
+    "einheit": "g",
+    "name": "Gnocchi"
+   },
+   {
+    "menge": 300,
+    "einheit": "g",
+    "name": "Blattspinat"
+   },
+   {
+    "menge": 200,
+    "einheit": "g",
+    "name": "Kirschtomate"
+   },
+   {
+    "menge": 2,
+    "einheit": "Zehe",
+    "name": "Knoblauch"
+   },
+   {
+    "menge": 150,
+    "einheit": "ml",
+    "name": "Sahne"
+   },
+   {
+    "menge": 50,
+    "einheit": "g",
+    "name": "Parmesan"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Olivenöl"
+   }
+  ],
+  "schritte": [
+   "Gnocchi in Öl goldbraun braten.",
+   "Knoblauch und Tomaten zugeben, Spinat zusammenfallen lassen.",
+   "Sahne angießen, mit Parmesan abschmecken."
+  ]
+ },
+ {
+  "titel": "Rindergulasch",
+  "portionen": 4,
+  "dauer_min": 150,
+  "kost": "fleisch",
+  "aufwand": "aufwendig",
+  "saison": [
+   "Winter"
+  ],
+  "etiketten": [
+   "Sonntag",
+   "Schmortopf"
+  ],
+  "zutaten": [
+   {
+    "menge": 800,
+    "einheit": "g",
+    "name": "Rindergulasch"
+   },
+   {
+    "menge": 600,
+    "einheit": "g",
+    "name": "Zwiebel"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Tomatenmark"
+   },
+   {
+    "menge": 2,
+    "einheit": "EL",
+    "name": "Paprikapulver"
+   },
+   {
+    "menge": 500,
+    "einheit": "ml",
+    "name": "Rinderbrühe"
+   },
+   {
+    "menge": 200,
+    "einheit": "ml",
+    "name": "Rotwein"
+   },
+   {
+    "menge": 500,
+    "einheit": "g",
+    "name": "Spätzle"
+   }
+  ],
+  "schritte": [
+   "Fleisch portionsweise scharf anbraten und herausnehmen.",
+   "Zwiebeln 15 Minuten goldbraun rösten, Tomatenmark und Paprika mitrösten.",
+   "Mit Rotwein ablöschen, Fleisch und Brühe zugeben.",
+   "Zugedeckt zwei Stunden bei kleiner Hitze schmoren, mit Spätzle servieren."
+  ],
+  "hinweise": "Braucht Zeit, aber kaum Aufsicht — etwas für den Sonntag."
+ },
+ {
+  "titel": "Shakshuka",
+  "portionen": 2,
+  "dauer_min": 30,
+  "kost": "vegetarisch",
+  "aufwand": "schnell",
+  "etiketten": [
+   "Pfanne",
+   "Brunch"
+  ],
+  "zutaten": [
+   {
+    "menge": 4,
+    "einheit": "Stück",
+    "name": "Ei"
+   },
+   {
+    "menge": 800,
+    "einheit": "g",
+    "name": "stückige Tomaten"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Paprika"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Zwiebel"
+   },
+   {
+    "menge": 2,
+    "einheit": "Zehe",
+    "name": "Knoblauch"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Kreuzkümmel"
+   },
+   {
+    "menge": 1,
+    "einheit": "TL",
+    "name": "Paprikapulver"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Fladenbrot"
+   },
+   {
+    "menge": 100,
+    "einheit": "g",
+    "name": "Feta"
+   }
+  ],
+  "schritte": [
+   "Zwiebel, Paprika und Knoblauch anbraten, Gewürze zugeben.",
+   "Tomaten 15 Minuten einkochen lassen.",
+   "Mulden formen, Eier hineingleiten lassen und stocken lassen.",
+   "Mit Feta bestreuen, mit Fladenbrot essen."
+  ]
+ },
+ {
+  "titel": "Nudelauflauf mit Brokkoli",
+  "portionen": 4,
+  "dauer_min": 55,
+  "kost": "vegetarisch",
+  "aufwand": "mittel",
+  "etiketten": [
+   "Auflauf",
+   "Kinder"
+  ],
+  "zutaten": [
+   {
+    "menge": 400,
+    "einheit": "g",
+    "name": "Penne"
+   },
+   {
+    "menge": 500,
+    "einheit": "g",
+    "name": "Brokkoli"
+   },
+   {
+    "menge": 400,
+    "einheit": "ml",
+    "name": "Sahne"
+   },
+   {
+    "menge": 200,
+    "einheit": "g",
+    "name": "geriebener Käse"
+   },
+   {
+    "menge": 2,
+    "einheit": "Stück",
+    "name": "Ei"
+   },
+   {
+    "menge": 1,
+    "einheit": "Prise",
+    "name": "Muskat"
+   },
+   {
+    "menge": 1,
+    "einheit": "Stück",
+    "name": "Zwiebel"
+   }
+  ],
+  "schritte": [
+   "Nudeln und Brokkoli knapp gar kochen.",
+   "Sahne mit Eiern, Muskat, Salz und Pfeffer verquirlen.",
+   "Alles in eine Form schichten, Guss darüber, Käse obenauf.",
+   "Bei 190 Grad 30 Minuten backen."
+  ]
+ }
+]

@@ -1,0 +1,138 @@
+ENERCJ	Energie (Kilojoule)	Energy (kilojoule)	kJ	Energie
+ENERCC	Energie (Kilokalorien)	Energy (kilocalorie)	kcal	Energie
+WATER	Wasser	Water	g	Makronährstoffe
+PROT625	Protein (Nx6,25)	Protein (Nx6.25)	g	Makronährstoffe
+FAT	Fett	Fat	g	Makronährstoffe
+CHO	Kohlenhydrate, verfügbar	Carbohydrate, available	g	Makronährstoffe
+FIBT	Ballaststoffe, gesamt	Fibre, dietary, total	g	Makronährstoffe
+ALC	Alkohol (Ethanol)	Alcohol (Ethanol)	g	Makronährstoffe
+OA	Organische Säuren, gesamt	Organic acids, total	g	Makronährstoffe
+ASH	Rohasche	Ash	g	Makronährstoffe
+VITA	Vitamin A, Retinol-Äquivalent (RE)	Vitamin A, retinol equivalents (RE)	µg	Fettlösliche Vitamine
+VITAA	Vitamin A, Retinol-Aktivitäts-Äquivalent (RAE)	Vitamin A, retinol activity equivalents (RAE)	µg	Fettlösliche Vitamine
+RETOL	Retinol	Retinol	µg	Fettlösliche Vitamine
+CARTB	Beta‑Carotin	Beta-carotene	µg	Fettlösliche Vitamine
+CAROTPAXB	Carotinoide, außer Beta-Carotin	Carotenoids, excluding beta-carotene	µg	Fettlösliche Vitamine
+VITD	Vitamin D	Vitamin D	µg	Fettlösliche Vitamine
+CHOCAL	Vitamin D3 (Cholecalciferol)	Vitamin D3 (cholecalciferol)	µg	Fettlösliche Vitamine
+ERGCAL	Vitamin D2 (Ergocalciferol)	Vitamin D2 (ergocalciferol)	µg	Fettlösliche Vitamine
+VITE	Vitamin E (Alpha-Tocopherol)	Vitamin E (alpha-tocopherol)	mg	Fettlösliche Vitamine
+TOCPHA	Alpha‑Tocopherol	Alpha-tocopherol	mg	Fettlösliche Vitamine
+TOCPHB	Beta-Tocopherol	Beta-tocopherol	mg	Fettlösliche Vitamine
+TOCPHG	Gamma-Tocopherol	Gamma-tocopherol	mg	Fettlösliche Vitamine
+TOCPHD	Delta-Tocopherol	Delta-tocopherol	mg	Fettlösliche Vitamine
+TOCTRA	Alpha-Tocotrienol	Alpha-tocotrienol	mg	Fettlösliche Vitamine
+VITK	Vitamin K	Vitamin K	µg	Fettlösliche Vitamine
+VITK1	Vitamin K1 (Phyllochinon)	Vitamin K1 (phylloquinone)	µg	Fettlösliche Vitamine
+VITK2	Vitamin K2 (Menachinone)	Vitamin K2 (menaquinone)	µg	Fettlösliche Vitamine
+THIA	Vitamin B1 (Thiamin)	Vitamin B1 (thiamine)	mg	Wasserlösliche Vitamine
+RIBF	Vitamin B2 (Riboflavin)	Vitamin B2 (riboflavin)	mg	Wasserlösliche Vitamine
+NIAEQ	Niacin-Äquivalent	Niacin equivalents	mg	Wasserlösliche Vitamine
+NIA	Niacin	Niacin	mg	Wasserlösliche Vitamine
+PANTAC	Pantothensäure	Pantothenic acid	mg	Wasserlösliche Vitamine
+VITB6	Vitamin B6	Vitamin B6	µg	Wasserlösliche Vitamine
+BIOT	Biotin	Biotin	µg	Wasserlösliche Vitamine
+FOL	Folat-Äquivalent	Folate equivalent	µg	Wasserlösliche Vitamine
+FOLFD	Folat	Folate	µg	Wasserlösliche Vitamine
+FOLAC	Folsäure, synthetisch	Folic acid, synthetic	µg	Wasserlösliche Vitamine
+VITB12	Vitamin B12 (Cobalamine)	Vitamin B12 (cobalamin)	µg	Wasserlösliche Vitamine
+VITC	Vitamin C	Vitamin C	mg	Wasserlösliche Vitamine
+NACL	Salz (Natriumchlorid)	Salt (sodium chloride)	g	Elemente
+NA	Natrium	Sodium	mg	Elemente
+CLD	Chlorid	Chloride	mg	Elemente
+K	Kalium	Potassium	mg	Elemente
+CA	Calcium	Calcium	mg	Elemente
+MG	Magnesium	Magnesium	mg	Elemente
+P	Phosphor	Phosphorus	mg	Elemente
+S	Schwefel	Sulphur	mg	Elemente
+FE	Eisen	Iron	mg	Elemente
+ZN	Zink	Zinc	mg	Elemente
+ID	Iodid	Iodide	µg	Elemente
+CU	Kupfer	Copper	µg	Elemente
+MN	Mangan	Manganese	µg	Elemente
+FD	Fluorid	Fluoride	µg	Elemente
+CR	Chrom	Chromium	µg	Elemente
+MO	Molybdän	Molybdenum	µg	Elemente
+ACEAC	Essigsäure	Acetic acid	g	Organische Säuren
+CITAC	Zitronensäure	Citric acid	g	Organische Säuren
+LACAC	Milchsäure	Lactic acid	g	Organische Säuren
+MALAC	Äpfelsäure	Malic acid	g	Organische Säuren
+TARAC	Weinsäure	Tartaric acid	g	Organische Säuren
+POLYL	Zuckeralkohole, gesamt	Polyols, total	g	Makronährstoffe
+MANTL	Mannit	Mannitol	g	Zuckeralkohole
+SORTL	Sorbit	Sorbitol	g	Zuckeralkohole
+XYLTL	Xylit	Xylitol	g	Zuckeralkohole
+MNSAC	Monosaccharide, gesamt	Monosaccharides, total	g	Kohlenhydrate (ohne Ballaststoffe)
+GLUS	Glucose	Glucose	g	Kohlenhydrate (ohne Ballaststoffe)
+FRUS	Fructose	Fructose	g	Kohlenhydrate (ohne Ballaststoffe)
+GALS	Galactose	Galactose	g	Kohlenhydrate (ohne Ballaststoffe)
+DISAC	Disaccharide, gesamt	Disaccharides, total	g	Kohlenhydrate (ohne Ballaststoffe)
+SUCS	Saccharose	Sucrose	g	Kohlenhydrate (ohne Ballaststoffe)
+MALS	Maltose	Maltose	g	Kohlenhydrate (ohne Ballaststoffe)
+LACS	Lactose	Lactose	g	Kohlenhydrate (ohne Ballaststoffe)
+SUGAR	Zucker (Mono- und Disaccharide), gesamt	Sugars (mono- and disaccharides), total	g	Kohlenhydrate (ohne Ballaststoffe)
+OLSAC	Oligosaccharide, verfügbar	Oligosaccharides, available	g	Kohlenhydrate (ohne Ballaststoffe)
+STARCH	Stärke (Stärke, Glykogen, Dextrine)	Starch (starch, glycogen, dextrins)	g	Kohlenhydrate (ohne Ballaststoffe)
+FIBLMW	Ballaststoffe, niedermolekular	Fibre, low molecular weight	g	Ballaststoffe
+FIBHMW	Ballaststoffe, hochmolekular	Fibre, high molecular weight	g	Ballaststoffe
+FIBINS	Ballaststoffe, wasserunlöslich	Fibre, water-insoluble	g	Ballaststoffe
+FIBSOL	Ballaststoffe, wasserlöslich	Fibre, water-soluble	g	Ballaststoffe
+FIBHMWS	Ballaststoffe, hochmolekular, wasserlöslich	Fibre, high molecular weight, water-soluble	g	Ballaststoffe
+FIBHMWI	Ballaststoffe, hochmolekular, wasserunlöslich	Fibre, high molecular weight, water-insoluble	g	Ballaststoffe
+FASAT	Fettsäuren, gesättigt, gesamt	Fatty acids, saturated, total	g	Fettsäuren
+F4:0	Fettsäure C4:0 (Buttersäure)	Fatty acid C4:0 (butyric acid)	g	Fettsäuren
+F6:0	Fettsäure C6:0 (Capronsäure)	Fatty acid C6:0 (caproic acid)	g	Fettsäuren
+F8:0	Fettsäure C8:0 (Caprylsäure)	Fatty acid C8:0 (caprylic acid)	g	Fettsäuren
+F10:0	Fettsäure C10:0 (Caprinsäure)	Fatty acid C10:0 (capric acid)	g	Fettsäuren
+F12:0	Fettsäure C12:0 (Laurinsäure)	Fatty acid C12:0 (lauric acid)	g	Fettsäuren
+F14:0	Fettsäure C14:0 (Myristinsäure)	Fatty acid C14:0 (myristic acid)	g	Fettsäuren
+F15:0	Fettsäure C15:0 (Pentadecylsäure)	Fatty acid C15:0 (pentadecylic acid)	g	Fettsäuren
+F16:0	Fettsäure C16:0 (Palmitinsäure)	Fatty acid C16:0 (palmitic acid)	g	Fettsäuren
+F17:0	Fettsäure C17:0 (Margarinsäure)	Fatty acid C17:0 (margaric acid)	g	Fettsäuren
+F18:0	Fettsäure C18:0 (Stearinsäure)	Fatty acid C18:0 (stearic acid)	g	Fettsäuren
+F20:0	Fettsäure C20:0 (Arachinsäure)	Fatty acid C20:0 (arachidic acid)	g	Fettsäuren
+F22:0	Fettsäure C22:0 (Behensäure)	Fatty acid C22:0 (behenic acid)	g	Fettsäuren
+F24:0	Fettsäure C24:0 (Lignocerinsäure)	Fatty acid C24:0 (lignoceric acid)	g	Fettsäuren
+FAMS	Fettsäure, einfach ungesättigt, gesamt	Fatty acids, monounsaturated, total	g	Fettsäuren
+F14:1CN5	Fettsäure C14:1 n-5 cis (Myristoleinsäure)	Fatty acid C14:1 n-5 cis (myristoleic acid)	g	Fettsäuren
+F16:1CN7	Fettsäure C16:1 n-7 cis (Palmitoleinsäure)	Fatty acid C16:1 n-7 cis (palmitoleic acid)	g	Fettsäuren
+F18:1CN7	Fettsäure C18:1 n-7 cis (Vaccensäure)	Fatty acid C18:1 n-7 cis (vaccenic acid)	g	Fettsäuren
+F18:1CN9	Fettsäure C18:1 n-9 cis (Ölsäure)	Fatty acid C18:1 n-9 cis (oleic acid)	g	Fettsäuren
+F20:1CN9	Fettsäure C20:1 n-9 cis (Gondosäure)	Fatty acid C20:1 n-9 cis (gondoic acid)	g	Fettsäuren
+F22:1CN9	Fettsäure C22:1 n-9 cis (Erucasäure)	Fatty acid C22:1 n-9 cis (erucic acid)	g	Fettsäuren
+FAPU	Fettsäuren, mehrfach ungesättigt, gesamt	Fatty acids, polyunsaturated, total	g	Fettsäuren
+FAPUN3	Fettsäuren, mehrfach ungesättigt n-3 (Omega-3), gesamt	Fatty acids, polyunsaturated, n-3 (omega-3), total	g	Fettsäuren
+F18:3CN3	Fettsäure C18:3 n-3 all-cis (Alpha-Linolensäure)	Fatty acid C18:3 n-3 all-cis (alpha-linolenic acid)	g	Fettsäuren
+F18:4CN3	Fettsäure C18:4 n-3 all-cis (Stearidonsäure)	Fatty acid C18:4 n-3 all-cis (stearidonic acid)	g	Fettsäuren
+F20:5CN3	Fettsäure C20:5 n-3 all-cis (Eicosapentaensäure)	Fatty acid C20:5 n-3 all-cis (eicosapentanoic acid)	g	Fettsäuren
+F22:5CN3	Fettsäure C22:5 n-3 all-cis (Docosapentaensäure)	Fatty acid C22:5 n-3 all-cis (docosapentanoic acid)	g	Fettsäuren
+F22:6CN3	Fettsäure C22:6 n-3 all-cis (Docosahexaensäure)	Fatty acid C22:6 n-3 all-cis (docosahexanoic acid)	g	Fettsäuren
+FAPUN6	Fettsäuren, mehrfach ungesättigt n-6 (Omega-6), gesamt	Fatty acids, polyunsaturated, n-6 (omega-6), total	g	Fettsäuren
+F18:2CN6	Fettsäure C18:2 n-6 cis, cis (Linolsäure)	Fatty acid C18:2 n-6 cis,cis (linoleic acid)	g	Fettsäuren
+F18:2C9T11	Fettsäure C18:2 n-7 cis 9, trans 11 (konjugierte Linolsäure)	Fatty acid C18:2 conjugated, cis 9,trans 11 (conjugated linoleic acid)	g	Fettsäuren
+F18:3CN6	Fettsäure C18:3 n-6 all-cis (Gamma-Linolensäure)	Fatty acid C18:3 n-6 all-cis (gamma-linolenic acid)	g	Fettsäuren
+F20:2CN6	Fettsäure C20:2 n-6 all-cis (Eicosadiensäure)	Fatty acid C20:2 n-6 cis,cis (eicosadienoic acid)	g	Fettsäuren
+F20:3CN6	Fettsäure C20:3 n-6 all-cis (Dihomogamma-Linolensäure)	Fatty acid C20:3 n-6 all-cis (dihomo-gamma-linolenic acid)	g	Fettsäuren
+F20:4CN6	Fettsäure C20:4 n-6 all-cis (Arachidonsäure)	Fatty acid C20:4 n-6 all-cis (arachidonic acid)	g	Fettsäuren
+FAX	Fettsäuren, sonstige	Fatty acids, others	g	Fettsäuren
+CHORL	Cholesterin	Cholesterol	mg	Sonstige Nährstoffe
+AAE9	Aminosäuren, unentbehrlich, gesamt	Amino acids, essential, total	g	Aminosäuren
+ALA	Alanin	Alanine	g	Aminosäuren
+ARG	Arginin	Arginine	g	Aminosäuren
+ASP	Asparaginsäure, inklusive Asparagin	Aspartic acid, including asparagine	g	Aminosäuren
+CYSTE	Cystein	Cysteine	g	Aminosäuren
+GLU	Glutaminsäure, inklusive Glutamin	Glutamic acid, including glutamine	g	Aminosäuren
+GLY	Glycin	Glycine	g	Aminosäuren
+HIS	Histidin	Histidine	g	Aminosäuren
+ILE	Isoleucin	Isoleucine	g	Aminosäuren
+LEU	Leucin	Leucine	g	Aminosäuren
+LYS	Lysin	Lysine	g	Aminosäuren
+MET	Methionin	Methionine	g	Aminosäuren
+PHE	Phenylalanin	Phenylalanine	g	Aminosäuren
+PRO	Prolin	Proline	g	Aminosäuren
+SER	Serin	Serine	g	Aminosäuren
+THR	Threonin	Threonine	g	Aminosäuren
+TRP	Tryptophan	Tryptophan	g	Aminosäuren
+TYR	Tyrosin	Tyrosine	g	Aminosäuren
+VAL	Valin	Valine	g	Aminosäuren
+NT	Stickstoff, gesamt	Nitrogen, total	g	Sonstige Nährstoffe

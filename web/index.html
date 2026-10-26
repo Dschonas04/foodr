@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foodr</title>
+<style>
+  :root { --grund: #fdfaf6; --karte: #fff; --rand: #e6ded4; --schrift: #2b2622;
+          --leise: #7d7268; --ton: #c2410c; --gut: #15803d; --flaeche: #f6efe7; }
+  @media (prefers-color-scheme: dark) {
+    :root { --grund: #191614; --karte: #221e1b; --rand: #35302b; --schrift: #f2ece6;
+            --leise: #a79c92; --ton: #fb923c; --gut: #4ade80; --flaeche: #2a2521; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--grund); color: var(--schrift);
+         font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 18px 16px 8px; max-width: 860px; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  header p { margin: 4px 0 0; color: var(--leise); font-size: 13px; }
+  nav { display: flex; gap: 6px; padding: 12px 16px; flex-wrap: wrap; max-width: 860px; }
+  nav button { border: 1px solid var(--rand); background: var(--karte); color: var(--schrift);
+               border-radius: 999px; padding: 7px 14px; font-size: 14px; cursor: pointer; }
+  nav button[aria-selected=true] { background: var(--ton); border-color: var(--ton); color: #fff; }
+  main { padding: 0 16px 48px; max-width: 860px; }
+  .karte { background: var(--karte); border: 1px solid var(--rand); border-radius: 14px;
+           padding: 14px; margin-bottom: 12px; }
+  .zeile { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+  .knoepfe { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tag { font-size: 12px; color: var(--leise); text-transform: uppercase; letter-spacing: .06em; }
+  .titel { font-weight: 600; }
+  .gross { font-size: 19px; font-weight: 650; }
+  .hinweis { color: var(--leise); font-size: 14px; margin-top: 4px; }
+  .klickbar { cursor: pointer; }
+  .klickbar:hover { border-color: var(--ton); }
+  button.tat { border: 1px solid var(--rand); background: transparent; color: var(--schrift);
+               border-radius: 9px; padding: 6px 10px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  button.tat:hover { border-color: var(--ton); }
+  button.haupt { background: var(--ton); border-color: var(--ton); color: #fff; font-size: 15px;
+                 padding: 10px 16px; border-radius: 11px; border: none; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  input, select, textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--rand);
+    border-radius: 10px; background: var(--grund); color: var(--schrift); font: inherit; }
+  label { display: block; font-size: 13px; color: var(--leise); margin: 10px 0 4px; }
+  .paar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .drei { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .suchzeile { display: grid; grid-template-columns: 1fr 220px; gap: 10px; }
+  @media (max-width: 560px) { .drei, .suchzeile { grid-template-columns: 1fr; } }
+  ul, ol { padding: 0; margin: 0; }
+  ul { list-style: none; }
+  ol { padding-left: 20px; }
+  li { padding: 7px 0; border-bottom: 1px solid var(--rand); }
+  li:last-child { border-bottom: none; }
+  .kat { margin: 16px 0 2px; font-size: 13px; color: var(--ton); font-weight: 600; }
+  .ab { color: var(--leise); text-decoration: line-through; }
+  .meldung { font-size: 14px; color: var(--ton); }
+  .leer { color: var(--leise); }
+  .werte { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  @media (max-width: 560px) { .werte { grid-template-columns: repeat(2, 1fr); } }
+  .wert { background: var(--flaeche); border-radius: 10px; padding: 8px 10px; }
+  .wert b { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
+  .wert span { font-size: 12px; color: var(--leise); }
+  .marke { display: inline-block; font-size: 12px; background: var(--flaeche); color: var(--leise);
+           border-radius: 999px; padding: 2px 8px; margin-right: 4px; white-space: nowrap; }
+  .marke.ton { color: var(--ton); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--rand); vertical-align: top; }
+  th { font-size: 12px; color: var(--leise); font-weight: 500; }
+  td.zahl, th.zahl { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chips label { margin: 0; display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--rand);
+                 border-radius: 999px; padding: 4px 10px; color: var(--schrift); cursor: pointer; }
+  .chips input { width: auto; }
+  dialog { border: 1px solid var(--rand); border-radius: 14px; background: var(--karte); color: var(--schrift);
+           width: min(600px, calc(100vw - 32px)); padding: 16px; }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  .treffer { max-height: 50vh; overflow: auto; margin-top: 8px; }
+  .treffer li { cursor: pointer; }
+  .treffer li:hover { color: var(--ton); }
+  footer { color: var(--leise); font-size: 12px; padding: 0 16px 24px; max-width: 860px; }
+  a { color: var(--ton); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Foodr</h1>
+  <p id="kopf">lädt …</p>
+</header>
+<nav>
+  <button data-reiter="woche" aria-selected="true">Woche</button>
+  <button data-reiter="einkauf">Einkauf</button>
+  <button data-reiter="rezepte">Rezepte</button>
+  <button data-reiter="neu">Rezept anlegen</button>
+  <button data-reiter="lebensmittel">Lebensmittel</button>
+  <button data-reiter="einstellungen">Einstellungen</button>
+</nav>
+<main id="inhalt"></main>
+<footer>Nährwerte: Max Rubner-Institut (2025), Bundeslebensmittelschlüssel (BLS) 4.0,
+  <a href="https://doi.org/10.25826/Data20251217-134202-0" target="_blank" rel="noopener">DOI 10.25826/Data20251217-134202-0</a>,
+  CC BY 4.0. Umrechnung von Stück, EL und TL in Gramm ist geschätzt.</footer>
+<dialog id="waehler"></dialog>
+<script type="module">
+const $ = (s, w = document) => w.querySelector(s);
+const bau = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content; };
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const zahl = (n, stellen = 1) => n == null || Number.isNaN(n) ? '–'
+  : Number(n).toLocaleString('de-DE', { maximumFractionDigits: stellen });
+
+const KERN = [
+  ['ENERCC', 'Energie', 'kcal', 0], ['PROT625', 'Eiweiß', 'g', 1], ['FAT', 'Fett', 'g', 1],
+  ['FASAT', 'davon gesättigt', 'g', 1], ['CHO', 'Kohlenhydrate', 'g', 1], ['SUGAR', 'davon Zucker', 'g', 1],
+  ['FIBT', 'Ballaststoffe', 'g', 1], ['NACL', 'Salz', 'g', 2],
+];
+const EINHEITEN = ['g', 'kg', 'ml', 'l', 'EL', 'TL', 'Stück', 'Prise', 'Bund', 'Zehe', 'Dose', 'Packung',
+  'Scheibe', 'Becher', 'Glas'];
+const WOCHENTAGE = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'];
+
+async function ruf(weg, art = 'GET', rumpf) {
+  const antwort = await fetch(weg, {
+    method: art,
+    headers: rumpf ? { 'Content-Type': 'application/json' } : undefined,
+    body: rumpf ? JSON.stringify(rumpf) : undefined,
+  });
+  const text = await antwort.text();
+  let daten = null;
+  try { daten = text ? JSON.parse(text) : null; } catch { daten = { fehler: text }; }
+  if (antwort.status === 401) { zeigeAnmeldung(); throw new Error('Anmeldung nötig'); }
+  if (!antwort.ok) throw new Error(daten?.fehler || antwort.status);
+  return daten;
+}
+
+const zustand = { status: null, plan: null, woche: null, rezepte: [], kategorien: null, reiter: 'woche' };
+
+const wochentag = (iso) => new Date(iso + 'T12:00:00')
+  .toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' });
+
+function werteKacheln(werte, codes = KERN) {
+  return `<div class="werte">${codes.map(([c, name, einheit, st]) => `<div class="wert">
+    <b>${zahl(werte?.[c], st)}${werte?.[c] == null ? '' : ' ' + einheit}</b><span>${name}</span></div>`).join('')}</div>`;
+}
+const kurzWerte = (w) => w ? `${zahl(w.ENERCC, 0)} kcal · ${zahl(w.PROT625)} g Eiweiß · ${zahl(w.FAT)} g Fett · ${zahl(w.CHO)} g KH` : '';
+
+async function ladeStatus() {
+  zustand.status = await ruf('/api/status');
+  zustand.woche = zustand.woche || zustand.status.woche;
+  const s = zustand.status;
+  $('#kopf').textContent = `${s.rezepte} Rezepte · ${zahl(s.lebensmittel, 0)} Lebensmittel · Modell ${s.modell} · `
+    + (s.ollama ? 'Ollama erreichbar' : 'Ollama offline');
+}
+
+function zeigeAnmeldung() {
+  $('#inhalt').innerHTML = `<div class="karte"><div class="tag">Anmelden</div>
+    <label>Kennwort</label><input id="kw" type="password" autocomplete="current-password">
+    <div style="margin-top:10px"><button class="haupt" id="anmelden">anmelden</button></div>
+    <div class="meldung" id="kwstand"></div></div>`;
+  const los = async () => {
+    try {
+      await ruf('/api/anmelden', 'POST', { kennwort: $('#kw').value });
+      await start();
+    } catch (f) { $('#kwstand').textContent = f.message; }
+  };
+  $('#anmelden').onclick = los;
+  $('#kw').onkeydown = (e) => { if (e.key === 'Enter') los(); };
+  $('#kw').focus();
+}
+
+// ---------- Woche ----------
+
+async function zeigeWoche() {
+  const [plan, regeln] = await Promise.all([ruf('/api/plan?woche=' + zustand.woche), ruf('/api/regeln')]);
+  zustand.plan = plan.leer ? null : plan;
+  const tage = (regeln.tage || WOCHENTAGE.join(',')).toLowerCase().split(',');
+  const kost = (regeln.nur_kost || '').split(',').filter(Boolean);
+  const m = $('#inhalt');
+  m.innerHTML = '';
+  m.append(bau(`<div class="karte">
+    <div class="zeile">
+      <div><div class="tag">Woche ab</div><div class="titel">${wochentag(zustand.woche)}</div></div>
+      <div class="knoepfe"><button class="tat" id="vor">‹</button><button class="tat" id="heute">heute</button>
+        <button class="tat" id="zurueck">›</button></div>
+    </div>
+    <div class="paar">
+      <div><label>Personen</label><input id="personen" type="number" min="1" value="${zustand.plan?.personen ?? regeln.personen ?? 2}"></div>
+      <div><label>Wünsche an den Assistenten</label>
+        <input id="wuensche" value="${esc(regeln.wuensche)}" placeholder="z. B. wenig Fleisch, Reste einplanen"></div>
+    </div>
+    <label>bekochte Tage</label>
+    <div class="chips">${WOCHENTAGE.map(t => `<label><input type="checkbox" data-tag="${t}" ${tage.includes(t) ? 'checked' : ''}>
+      ${t.slice(0, 2).replace(/^./, c => c.toUpperCase())}</label>`).join('')}</div>
+    <label>nur diese Kost (leer = alles)</label>
+    <div class="chips">${['vegan', 'vegetarisch', 'fisch', 'fleisch'].map(k => `<label>
+      <input type="checkbox" data-kost="${k}" ${kost.includes(k) ? 'checked' : ''}>${k}</label>`).join('')}</div>
+    <div style="margin-top:12px"><button class="haupt" id="erzeugen">${zustand.plan ? 'Plan neu erzeugen' : 'Plan erzeugen'}</button></div>
+    <div class="hinweis" id="stand"></div>
+  </div>`));
+
+  if (zustand.plan) {
+    const nw = await ruf(`/api/plan/${zustand.plan.id}/naehrwerte`).catch(() => null);
+    const jeTag = Object.fromEntries((nw?.tage || []).map(t => [t.tag, t]));
+    if (zustand.plan.begruendung) {
+      m.append(bau(`<div class="karte"><div class="tag">Warum so</div>
+        <div class="hinweis" style="color:var(--schrift)">${esc(zustand.plan.begruendung)}</div></div>`));
+    }
+    for (const t of zustand.plan.tage) {
+      const r = t.rezept;
+      const w = jeTag[t.tag];
+      m.append(bau(`<div class="karte">
+        <div class="zeile">
+          <div>
+            <div class="tag">${wochentag(t.tag)}</div>
+            <div class="titel ${t.gekocht ? 'ab' : ''} ${r ? 'klickbar' : ''}" ${r ? `data-oeffne="${r.id}"` : ''}>${esc(r ? r.titel : 'offen')}</div>
+            <div class="hinweis">${r ? `${r.kost} · ${r.dauer_min} min · ${r.aufwand}` : ''}
+              ${t.hinweis ? '<br>' + esc(t.hinweis) : ''}</div>
+            ${w ? `<div class="hinweis">je Portion: ${kurzWerte(w.je_portion)}
+              ${w.erfasst < w.zutaten ? `<span class="marke">${w.erfasst}/${w.zutaten} Zutaten erfasst</span>` : ''}</div>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="tat" data-tausch="${t.id}">tauschen</button>
+            <button class="tat" data-waehle="${t.id}">wählen</button>
+            <button class="tat" data-kochen="${t.id}" data-an="${t.gekocht ? 0 : 1}">${t.gekocht ? 'zurück' : 'gekocht'}</button>
+          </div>
+        </div>
+      </div>`));
+    }
+    if (nw?.tage?.length) {
+      m.append(bau(`<div class="karte"><div class="tag">Schnitt je Portion über ${nw.tage.length} Gerichte</div>
+        ${werteKacheln(nw.schnitt)}</div>`));
+    }
+  } else {
+    m.append(bau(`<div class="karte leer">Für diese Woche gibt es noch keinen Plan.</div>`));
+  }
+
+  $('#vor').onclick = () => { zustand.woche = schiebe(zustand.woche, -7); zeigeWoche(); };
+  $('#zurueck').onclick = () => { zustand.woche = schiebe(zustand.woche, 7); zeigeWoche(); };
+  $('#heute').onclick = () => { zustand.woche = zustand.status.woche; zeigeWoche(); };
+  $('#erzeugen').onclick = async (e) => {
+    e.target.disabled = true;
+    $('#stand').textContent = 'Der Assistent überlegt … das dauert eine Weile.';
+    try {
+      const raus = await ruf('/api/plan/erzeugen', 'POST', {
+        woche: zustand.woche,
+        personen: Number($('#personen').value) || 2,
+        wuensche: $('#wuensche').value,
+        tage: [...m.querySelectorAll('[data-tag]:checked')].map(k => k.dataset.tag),
+        nur_kost: [...m.querySelectorAll('[data-kost]:checked')].map(k => k.dataset.kost),
+      });
+      await zeigeWoche();
+      if (raus.meldung) $('#stand').textContent = raus.meldung;
+    } catch (f) { $('#stand').textContent = 'Fehlgeschlagen: ' + f.message; e.target.disabled = false; }
+  };
+  m.querySelectorAll('[data-tausch]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    await ruf(`/api/plan/tag/${b.dataset.tausch}/tauschen`, 'POST', { woche: zustand.woche });
+    zeigeWoche();
+  });
+  m.querySelectorAll('[data-kochen]').forEach(b => b.onclick = async () => {
+    await ruf(`/api/plan/tag/${b.dataset.kochen}/gekocht`, 'POST',
+      { gekocht: b.dataset.an === '1', woche: zustand.woche });
+    zeigeWoche();
+  });
+  m.querySelectorAll('[data-waehle]').forEach(b => b.onclick = () => waehleRezept(b.dataset.waehle));
+  m.querySelectorAll('[data-oeffne]').forEach(b => b.onclick = () => zeigeRezept(b.dataset.oeffne));
+}
+
+async function waehleRezept(tagID) {
+  const rezepte = await ruf('/api/rezepte');
+  const d = $('#waehler');
+  d.innerHTML = `<div class="zeile"><div class="titel">Gericht wählen</div><button class="tat" id="zu">schließen</button></div>
+    <input id="wsuche" placeholder="suchen" style="margin-top:10px">
+    <ul class="treffer" id="wliste"></ul>`;
+  const liste = () => {
+    const q = $('#wsuche').value.toLowerCase();
+    $('#wliste').innerHTML = rezepte.filter(r => r.titel.toLowerCase().includes(q))
+      .map(r => `<li data-id="${r.id}">${esc(r.titel)} <span class="hinweis">${r.kost} · ${r.dauer_min} min</span></li>`).join('');
+  };
+  liste();
+  $('#wsuche').oninput = liste;
+  $('#zu').onclick = () => d.close();
+  $('#wliste').onclick = async (e) => {
+    const li = e.target.closest('li');
+    if (!li) return;
+    await ruf(`/api/plan/tag/${tagID}`, 'PUT', { rezept_id: Number(li.dataset.id), hinweis: '', woche: zustand.woche });
+    d.close();
+    zeigeWoche();
+  };
+  d.showModal();
+  $('#wsuche').focus();
+}
+
+const schiebe = (iso, tage) => {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + tage);
+  return d.toISOString().slice(0, 10);
+};
+
+// ---------- Einkauf ----------
+
+async function zeigeEinkauf() {
+  const m = $('#inhalt');
+  const plan = zustand.plan || (await ruf('/api/plan?woche=' + zustand.woche));
+  if (!plan || plan.leer) { m.innerHTML = '<div class="karte leer">Erst einen Plan erzeugen.</div>'; return; }
+  const liste = await ruf(`/api/plan/${plan.id}/einkauf`);
+  m.innerHTML = '';
+  m.append(bau(`<div class="karte"><div class="tag">Einkauf für die Woche ab ${wochentag(plan.woche)}</div>
+    <div id="posten"></div>
+    <label>etwas ergänzen</label>
+    <div class="paar"><input id="neuname" placeholder="Spülmittel"><button class="tat" id="neuposten">hinzufügen</button></div>
+    <div style="margin-top:10px"><a class="tag" href="/api/plan/${plan.id}/einkauf.txt" target="_blank">als Text teilen</a></div>
+  </div>`));
+  const ziel = $('#posten');
+  let kategorie = '';
+  for (const p of liste) {
+    if (p.kategorie !== kategorie) {
+      kategorie = p.kategorie;
+      ziel.append(bau(`<div class="kat">${esc(kategorie)}</div>`));
+    }
+    ziel.append(bau(`<ul><li class="zeile"><label style="display:flex;gap:10px;align-items:center;margin:0;color:var(--schrift)">
+      <input type="checkbox" style="width:auto" ${p.abgehakt ? 'checked' : ''} data-id="${p.id}">
+      <span class="${p.abgehakt ? 'ab' : ''}">${p.menge ? zahl(p.menge, 2) + ' ' + esc(p.einheit) + ' ' : ''}${esc(p.name)}</span>
+    </label><span class="knoepfe"><button class="tat" data-vorrat="${esc(p.name)}" title="kommt künftig nicht mehr auf die Liste">im Vorrat</button>
+      <button class="tat" data-weg="${p.id}">✕</button></span></li></ul>`));
+  }
+  ziel.querySelectorAll('input[type=checkbox]').forEach(k => k.onchange = async () => {
+    await ruf('/api/einkauf/' + k.dataset.id, 'PATCH', { abgehakt: k.checked });
+    k.nextElementSibling.classList.toggle('ab', k.checked);
+  });
+  ziel.querySelectorAll('[data-weg]').forEach(b => b.onclick = async () => {
+    await ruf('/api/einkauf/' + b.dataset.weg, 'DELETE');
+    zeigeEinkauf();
+  });
+  ziel.querySelectorAll('[data-vorrat]').forEach(b => b.onclick = async () => {
+    await ruf('/api/vorrat', 'POST', { name: b.dataset.vorrat });
+    b.textContent = 'gemerkt';
+    b.disabled = true;
+  });
+  const neu = async () => {
+    const name = $('#neuname').value.trim();
+    if (!name) return;
+    await ruf(`/api/plan/${plan.id}/einkauf`, 'POST', { name, menge: 0 });
+    zeigeEinkauf();
+  };
+  $('#neuposten').onclick = neu;
+  $('#neuname').onkeydown = (e) => { if (e.key === 'Enter') neu(); };
+}
+
+// ---------- Rezepte ----------
+
+async function zeigeRezepte() {
+  zustand.rezepte = await ruf('/api/rezepte');
+  const m = $('#inhalt');
+  m.innerHTML = '';
+  if (!zustand.rezepte.length) {
+    m.innerHTML = '<div class="karte leer">Der Pool ist leer. Unter „Rezept anlegen“ geht es los.</div>';
+    return;
+  }
+  m.append(bau(`<div class="karte"><input id="rsuche" placeholder="Rezepte durchsuchen"></div><div id="rliste"></div>`));
+  const liste = () => {
+    const q = $('#rsuche').value.toLowerCase();
+    $('#rliste').innerHTML = zustand.rezepte
+      .filter(r => !q || r.titel.toLowerCase().includes(q) || r.zutaten.some(z => z.name.toLowerCase().includes(q)))
+      .map(r => `<div class="karte klickbar" data-oeffne="${r.id}">
+        <div class="titel">${esc(r.titel)}</div>
+        <div class="hinweis">${r.kost} · ${r.dauer_min} min · ${r.portionen} Portionen
+          ${r.zuletzt_gekocht ? '· zuletzt ' + r.zuletzt_gekocht : '· noch nie gekocht'}</div></div>`).join('');
+    m.querySelectorAll('[data-oeffne]').forEach(k => k.onclick = () => zeigeRezept(k.dataset.oeffne));
+  };
+  liste();
+  $('#rsuche').oninput = liste;
+}
+
+async function zeigeRezept(id) {
+  const [r, nw] = await Promise.all([ruf('/api/rezepte/' + id), ruf(`/api/rezepte/${id}/naehrwerte`)]);
+  const m = $('#inhalt');
+  m.innerHTML = '';
+  m.append(bau(`<div class="karte">
+    <div class="zeile"><div>
+      <div class="gross">${esc(r.titel)}</div>
+      <div class="hinweis">${r.kost} · ${r.art} · ${r.dauer_min} min · ${r.aufwand} · ${r.portionen} Portionen</div>
+      ${r.beschreibung ? `<div class="hinweis" style="color:var(--schrift)">${esc(r.beschreibung)}</div>` : ''}
+    </div><div class="knoepfe"><button class="tat" id="zurueck">‹ alle</button><button class="tat" id="weg">löschen</button></div></div>
+  </div>
+  <div class="karte"><div class="tag">Nährwerte je Portion</div>
+    ${werteKacheln(nw.je_portion)}
+    <div class="hinweis">${nw.erfasst} von ${nw.zutaten.length} Zutaten erfasst · ganzes Rezept ${zahl(nw.gesamt.ENERCC, 0)} kcal</div>
+  </div>
+  <div class="karte"><div class="tag">Zutaten und Lebensmittel</div>
+    <table><thead><tr><th>Zutat</th><th>Lebensmittel</th><th class="zahl">g</th><th class="zahl">kcal</th><th></th></tr></thead>
+    <tbody>${nw.zutaten.map((z, i) => `<tr>
+      <td>${z.menge ? zahl(z.menge, 2) : ''} ${esc(z.einheit)} ${esc(z.name)}</td>
+      <td>${z.lebensmittel ? `<span class="klickbar" data-lm="${esc(z.lebensmittel.id)}">${esc(z.lebensmittel.name)}</span>` : ''}
+        ${z.von_hand ? '<span class="marke">von Hand</span>' : ''}
+        ${z.fehlt ? `<div class="meldung">${esc(z.fehlt)}</div>` : ''}</td>
+      <td class="zahl">${z.gramm ? zahl(z.gramm, 0) : ''}</td>
+      <td class="zahl">${z.werte ? zahl(z.werte.ENERCC, 0) : ''}</td>
+      <td><button class="tat" data-zuordnen="${i}">ändern</button></td></tr>`).join('')}</tbody></table>
+  </div>
+  ${r.schritte.length ? `<div class="karte"><div class="tag">Zubereitung</div><ol>${r.schritte.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>` : ''}
+  ${r.hinweise ? `<div class="karte"><div class="tag">Hinweise</div><div>${esc(r.hinweise)}</div></div>` : ''}`));
+  $('#zurueck').onclick = () => wechsle('rezepte');
+  $('#weg').onclick = async () => {
+    if (!confirm(`„${r.titel}“ löschen?`)) return;
+    await ruf('/api/rezepte/' + r.id, 'DELETE');
+    await ladeStatus();
+    wechsle('rezepte');
+  };
+  m.querySelectorAll('[data-lm]').forEach(s => s.onclick = () => zeigeLebensmittel(s.dataset.lm));
+  m.querySelectorAll('[data-zuordnen]').forEach(b => b.onclick = () =>
+    ordneZu(nw.zutaten[b.dataset.zuordnen], () => zeigeRezept(id)));
+}
+
+// Auswahl eines Lebensmittels fuer eine Zutat. Gilt fuer alle Rezepte mit
+// dieser Zutat.
+function ordneZu(zutat, danach) {
+  const d = $('#waehler');
+  d.innerHTML = `<div class="zeile"><div><div class="tag">Zutat</div><div class="titel">${esc(zutat.name)}</div></div>
+      <button class="tat" id="zu">schließen</button></div>
+    <div class="hinweis">Die Zuordnung gilt für jedes Rezept mit dieser Zutat.</div>
+    <div class="paar"><div><label>Lebensmittel suchen</label><input id="lsuche" value="${esc(zutat.name)}"></div>
+      <div><label>Gewicht eines Stücks in g (optional)</label><input id="lstueck" type="number" min="0" placeholder="z. B. 120"></div></div>
+    <ul class="treffer" id="lliste"></ul>
+    <div class="knoepfe" style="margin-top:10px">
+      <button class="tat" id="auslassen">nicht mitrechnen</button>
+      <button class="tat" id="auto">automatisch zuordnen</button></div>`;
+  let warte;
+  const suche = async () => {
+    const t = await ruf('/api/lebensmittel?grenze=40&q=' + encodeURIComponent($('#lsuche').value));
+    $('#lliste').innerHTML = t.length ? t.map(l => `<li data-id="${esc(l.id)}">${esc(l.name)}
+      <span class="hinweis">${zahl(l.kern.ENERCC, 0)} kcal/100 g${l.quelle === 'eigen' ? ' · eigen' : ''}</span></li>`).join('')
+      : '<li class="leer">nichts gefunden</li>';
+  };
+  const setze = async (lebensmittel) => {
+    await ruf('/api/zuordnung', 'PUT', { zutat: zutat.name, lebensmittel, stueck_g: Number($('#lstueck').value) || 0 });
+    d.close();
+    danach();
+  };
+  $('#lsuche').oninput = () => { clearTimeout(warte); warte = setTimeout(suche, 200); };
+  $('#lliste').onclick = (e) => { const li = e.target.closest('li[data-id]'); if (li) setze(li.dataset.id); };
+  $('#auslassen').onclick = () => setze('-');
+  $('#auto').onclick = async () => {
+    await ruf('/api/zuordnung/' + encodeURIComponent(zutat.name), 'DELETE');
+    d.close();
+    danach();
+  };
+  $('#zu').onclick = () => d.close();
+  suche();
+  d.showModal();
+}
+
+// ---------- Rezept anlegen ----------
+
+// "200 g Mehl", "2 EL Öl", "1 Prise Salz", "Pfeffer"
+function leseZutat(zeile) {
+  const t = zeile.trim().replace(/^[-•*]\s*/, '');
+  const m = t.match(/^(\d+(?:[.,]\d+)?|\d+\/\d+)?\s*(\S+)?\s*(.*)$/);
+  if (!m) return null;
+  let menge = 0;
+  if (m[1]) menge = m[1].includes('/') ? m[1].split('/').reduce((a, b) => a / b) : Number(m[1].replace(',', '.'));
+  const einheit = EINHEITEN.find(e => e.toLowerCase() === (m[2] || '').toLowerCase());
+  const name = einheit ? m[3] : [m[2], m[3]].filter(Boolean).join(' ');
+  return name ? { menge, einheit: einheit || (menge ? 'Stück' : ''), name: name.trim(), kategorie: '' } : null;
+}
+
+function zeigeNeu() {
+  $('#inhalt').innerHTML = `<div class="karte">
+    <div class="tag">Rezept einlesen</div>
+    <label>Text oder Adresse einfügen – das Modell sortiert Zutaten und Schritte</label>
+    <textarea id="roh" rows="7" placeholder="Zutaten und Zubereitung hier einfügen, oder eine Rezept-Adresse"></textarea>
+    <div style="margin-top:10px"><button class="haupt" id="lesen">einlesen</button></div>
+    <div class="hinweis" id="stand2"></div>
+    <div id="vorschau"></div>
+  </div>
+  <div class="karte">
+    <div class="tag">Von Hand anlegen</div>
+    <label>Titel</label><input id="ntitel">
+    <div class="drei">
+      <div><label>Portionen</label><input id="nport" type="number" min="1" value="2"></div>
+      <div><label>Dauer in Minuten</label><input id="ndauer" type="number" min="1" value="30"></div>
+      <div><label>Aufwand</label><select id="naufwand"><option>schnell</option><option selected>mittel</option><option>aufwendig</option></select></div>
+    </div>
+    <div class="paar">
+      <div><label>Art</label><select id="nart"><option>hauptgericht</option><option>beilage</option><option>fruehstueck</option><option>nachtisch</option></select></div>
+      <div><label>Kost</label><select id="nkost"><option>vegan</option><option>vegetarisch</option><option>fisch</option><option selected>fleisch</option></select></div>
+    </div>
+    <label>Zutaten, eine je Zeile (z. B. „200 g Mehl“, „2 EL Öl“, „1 Zwiebel“)</label>
+    <textarea id="nzutaten" rows="7"></textarea>
+    <label>Schritte, einer je Zeile</label>
+    <textarea id="nschritte" rows="5"></textarea>
+    <div style="margin-top:10px"><button class="haupt" id="nsichern">speichern</button></div>
+    <div class="hinweis" id="nstand"></div>
+  </div>`;
+  $('#lesen').onclick = async (e) => {
+    e.target.disabled = true;
+    $('#stand2').textContent = 'liest …';
+    try {
+      const r = await ruf('/api/rezepte/einlesen', 'POST', { text: $('#roh').value });
+      $('#stand2').textContent = '';
+      $('#vorschau').innerHTML = `<div class="kat">${esc(r.titel)}</div>
+        <div class="hinweis">${r.kost} · ${r.dauer_min} min · ${r.portionen} Portionen</div>
+        <ul>${r.zutaten.map(z => `<li>${z.menge ? zahl(z.menge, 2) : ''} ${esc(z.einheit)} ${esc(z.name)}</li>`).join('')}</ul>
+        <ol>${r.schritte.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+        <button class="haupt" id="sichern">in den Pool</button>`;
+      $('#sichern').onclick = async () => {
+        const neu = await ruf('/api/rezepte', 'POST', r);
+        await ladeStatus();
+        zeigeRezept(neu.id);
+      };
+    } catch (f) { $('#stand2').textContent = 'Fehlgeschlagen: ' + f.message; }
+    e.target.disabled = false;
+  };
+  $('#nsichern').onclick = async () => {
+    const r = {
+      titel: $('#ntitel').value.trim(),
+      portionen: Number($('#nport').value) || 2,
+      dauer_min: Number($('#ndauer').value) || 30,
+      aufwand: $('#naufwand').value, art: $('#nart').value, kost: $('#nkost').value,
+      zutaten: $('#nzutaten').value.split('\n').map(leseZutat).filter(Boolean),
+      schritte: $('#nschritte').value.split('\n').map(s => s.trim()).filter(Boolean),
+      saison: [], etiketten: [],
+    };
+    if (!r.titel) { $('#nstand').textContent = 'Titel fehlt.'; return; }
+    try {
+      const neu = await ruf('/api/rezepte', 'POST', r);
+      await ladeStatus();
+      zeigeRezept(neu.id);
+    } catch (f) { $('#nstand').textContent = 'Fehlgeschlagen: ' + f.message; }
+  };
+}
+
+// ---------- Lebensmittel ----------
+
+async function zeigeLebensmittelSuche() {
+  zustand.kategorien = zustand.kategorien || await ruf('/api/lebensmittel/kategorien');
+  const m = $('#inhalt');
+  m.innerHTML = `<div class="karte">
+    <div class="suchzeile">
+      <input id="fsuche" placeholder="Lebensmittel suchen, z. B. Haferflocken" value="${esc(zustand.fsuche || '')}">
+      <select id="fkat"><option value="">alle Gruppen</option>${zustand.kategorien.map(k =>
+        `<option value="${k.code}" ${zustand.fkat === k.code ? 'selected' : ''}>${esc(k.name)} (${k.anzahl})</option>`).join('')}</select>
+    </div>
+    <div class="knoepfe" style="margin-top:10px"><button class="tat" id="eigenes">eigenes Lebensmittel anlegen</button></div>
+  </div>
+  <div class="karte"><table><thead><tr><th>Lebensmittel</th><th class="zahl">kcal</th><th class="zahl">Eiweiß</th>
+    <th class="zahl">Fett</th><th class="zahl">KH</th></tr></thead><tbody id="fliste"></tbody></table>
+    <div class="hinweis">Werte je 100 g</div></div>`;
+  let warte;
+  const suche = async () => {
+    zustand.fsuche = $('#fsuche').value;
+    zustand.fkat = $('#fkat').value;
+    const t = await ruf(`/api/lebensmittel?grenze=100&q=${encodeURIComponent(zustand.fsuche)}&kategorie=${zustand.fkat}`);
+    $('#fliste').innerHTML = t.length ? t.map(l => `<tr class="klickbar" data-lm="${esc(l.id)}">
+      <td>${esc(l.name)}${l.quelle === 'eigen' ? ' <span class="marke ton">eigen</span>' : ''}</td>
+      <td class="zahl">${zahl(l.kern.ENERCC, 0)}</td><td class="zahl">${zahl(l.kern.PROT625)}</td>
+      <td class="zahl">${zahl(l.kern.FAT)}</td><td class="zahl">${zahl(l.kern.CHO)}</td></tr>`).join('')
+      : '<tr><td colspan="5" class="leer">nichts gefunden</td></tr>';
+    m.querySelectorAll('[data-lm]').forEach(z => z.onclick = () => zeigeLebensmittel(z.dataset.lm));
+  };
+  $('#fsuche').oninput = () => { clearTimeout(warte); warte = setTimeout(suche, 200); };
+  $('#fkat').onchange = suche;
+  $('#eigenes').onclick = () => bearbeiteEigenes(null);
+  suche();
+  $('#fsuche').focus();
+}
+
+async function zeigeLebensmittel(id) {
+  const l = await ruf('/api/lebensmittel/' + encodeURIComponent(id));
+  const m = $('#inhalt');
+  m.innerHTML = `<div class="karte">
+    <div class="zeile"><div>
+      <div class="tag">${esc(l.kategorie_name)}${l.quelle !== 'eigen' ? ' · BLS ' + esc(l.id) : ''}</div>
+      <div class="gross">${esc(l.name)}</div>
+      ${l.name_en ? `<div class="hinweis">${esc(l.name_en)}</div>` : ''}
+      ${l.stueck_g ? `<div class="hinweis">1 Stück ≈ ${zahl(l.stueck_g, 0)} g</div>` : ''}
+    </div><div class="knoepfe"><button class="tat" id="zurueck">‹ Suche</button>
+      ${l.quelle === 'eigen' ? '<button class="tat" id="aendern">ändern</button><button class="tat" id="weg">löschen</button>' : ''}</div></div>
+    <div class="tag" style="margin-top:12px">je 100 g</div>
+    ${werteKacheln(l.werte)}
+  </div>
+  ${l.gruppen.map((g, i) => `<details class="karte" ${i === 0 ? 'open' : ''}><summary class="titel">${esc(g.name)}
+      <span class="hinweis">(${g.stoffe.length})</span></summary>
+    <table style="margin-top:8px"><tbody>${g.stoffe.map(s => `<tr><td>${esc(s.name)}</td>
+      <td class="zahl">${s.spur ? 'Spuren' : zahl(s.wert, 3) + ' ' + esc(s.einheit)}</td></tr>`).join('')}</tbody></table>
+  </details>`).join('')}`;
+  $('#zurueck').onclick = () => wechsle('lebensmittel');
+  if (l.quelle === 'eigen') {
+    $('#aendern').onclick = () => bearbeiteEigenes(l);
+    $('#weg').onclick = async () => {
+      if (!confirm(`„${l.name}“ löschen?`)) return;
+      await ruf('/api/lebensmittel/' + l.id, 'DELETE');
+      wechsle('lebensmittel');
+    };
+  }
+}
+
+function bearbeiteEigenes(l) {
+  const m = $('#inhalt');
+  m.innerHTML = `<div class="karte">
+    <div class="tag">${l ? 'Eigenes Lebensmittel ändern' : 'Eigenes Lebensmittel'}</div>
+    <div class="paar"><div><label>Name</label><input id="ename" value="${esc(l?.name)}"></div>
+      <div><label>Gewicht eines Stücks in g (optional)</label><input id="estueck" type="number" min="0" value="${l?.stueck_g || ''}"></div></div>
+    <div class="tag" style="margin-top:14px">je 100 g – leer lassen, was unbekannt ist</div>
+    <div class="paar">${KERN.map(([c, name, einheit]) => `<div><label>${name} (${einheit})</label>
+      <input type="number" min="0" step="any" data-wert="${c}" value="${l?.werte?.[c] ?? ''}"></div>`).join('')}</div>
+    <div class="knoepfe" style="margin-top:12px"><button class="haupt" id="esichern">speichern</button>
+      <button class="tat" id="eab">abbrechen</button></div>
+    <div class="meldung" id="estand"></div>
+  </div>`;
+  $('#eab').onclick = () => l ? zeigeLebensmittel(l.id) : wechsle('lebensmittel');
+  $('#esichern').onclick = async () => {
+    const werte = { ...(l?.werte || {}) };
+    m.querySelectorAll('[data-wert]').forEach(f => {
+      if (f.value === '') delete werte[f.dataset.wert]; else werte[f.dataset.wert] = Number(f.value);
+    });
+    try {
+      const neu = await ruf(l ? '/api/lebensmittel/' + l.id : '/api/lebensmittel', l ? 'PUT' : 'POST',
+        { name: $('#ename').value, stueck_g: Number($('#estueck').value) || 0, werte });
+      zustand.kategorien = null;
+      await ladeStatus();
+      zeigeLebensmittel(neu.id);
+    } catch (f) { $('#estand').textContent = f.message; }
+  };
+}
+
+// ---------- Einstellungen ----------
+
+async function zeigeEinstellungen() {
+  await ladeStatus();
+  const [vorrat, zuordnung] = await Promise.all([ruf('/api/vorrat'), ruf('/api/zuordnung')]);
+  const s = zustand.status;
+  const m = $('#inhalt');
+  m.innerHTML = `<div class="karte"><div class="tag">Stand</div>
+    <div>${s.rezepte} Rezepte · ${zahl(s.lebensmittel, 0)} Lebensmittel</div>
+    <div>Modell ${esc(s.modell)} – ${s.ollama ? 'Ollama erreichbar' : 'Ollama offline'}</div>
+    ${s.modelle?.length ? `<div class="hinweis">vorhanden: ${s.modelle.map(esc).join(', ')}</div>` : ''}
+  </div>
+  <div class="karte"><div class="tag">Vorrat – kommt nie auf die Einkaufsliste</div>
+    <ul>${vorrat.map(v => `<li class="zeile"><span>${esc(v)}</span><button class="tat" data-vweg="${esc(v)}">✕</button></li>`).join('')
+      || '<li class="leer">leer</li>'}</ul>
+    <div class="paar" style="margin-top:8px"><input id="vneu" placeholder="Salz"><button class="tat" id="vplus">hinzufügen</button></div>
+  </div>
+  <div class="karte"><div class="tag">Zuordnungen von Hand</div>
+    <ul>${zuordnung.sort((a, b) => a.zutat.localeCompare(b.zutat)).map(z => `<li class="zeile"><span>${esc(z.zutat)} →
+      ${z.lebensmittel === '-' ? '<span class="hinweis">nicht mitgerechnet</span>' : `<span class="klickbar" data-lm="${esc(z.lebensmittel)}">${esc(z.lebensmittel)}</span>`}
+      ${z.stueck_g ? `<span class="marke">${zahl(z.stueck_g, 0)} g/Stück</span>` : ''}</span>
+      <button class="tat" data-zweg="${esc(z.zutat)}">✕</button></li>`).join('') || '<li class="leer">keine – alles automatisch</li>'}</ul>
+  </div>`;
+  m.querySelectorAll('[data-vweg]').forEach(b => b.onclick = async () => {
+    await ruf('/api/vorrat/' + encodeURIComponent(b.dataset.vweg), 'DELETE');
+    zeigeEinstellungen();
+  });
+  m.querySelectorAll('[data-zweg]').forEach(b => b.onclick = async () => {
+    await ruf('/api/zuordnung/' + encodeURIComponent(b.dataset.zweg), 'DELETE');
+    zeigeEinstellungen();
+  });
+  m.querySelectorAll('[data-lm]').forEach(s => s.onclick = () => zeigeLebensmittel(s.dataset.lm));
+  const plus = async () => {
+    const name = $('#vneu').value.trim();
+    if (!name) return;
+    await ruf('/api/vorrat', 'POST', { name });
+    zeigeEinstellungen();
+  };
+  $('#vplus').onclick = plus;
+  $('#vneu').onkeydown = (e) => { if (e.key === 'Enter') plus(); };
+}
+
+// ---------- Rahmen ----------
+
+const reiter = { woche: zeigeWoche, einkauf: zeigeEinkauf, rezepte: zeigeRezepte, neu: zeigeNeu,
+  lebensmittel: zeigeLebensmittelSuche, einstellungen: zeigeEinstellungen };
+
+function wechsle(name) {
+  zustand.reiter = name;
+  document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-selected', x.dataset.reiter === name));
+  Promise.resolve(reiter[name]()).catch(f => {
+    if (f.message !== 'Anmeldung nötig') $('#inhalt').innerHTML = `<div class="karte meldung">${esc(f.message)}</div>`;
+  });
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => wechsle(b.dataset.reiter));
+
+async function start() {
+  await ladeStatus();
+  if (zustand.status.kennwort && !zustand.status.angemeldet) { zeigeAnmeldung(); return; }
+  wechsle(zustand.reiter);
+}
+start().catch(f => { $('#kopf').textContent = 'Dienst nicht erreichbar: ' + f.message; });
+</script>
+</body>
+</html>

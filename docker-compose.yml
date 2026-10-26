@@ -1,0 +1,39 @@
+# Foodr: Dienst und Datenbank. Die Weboberflaeche liegt unter
+# http://<Wirt>:8300. Ollama laeuft getrennt; die Adresse kommt aus .env.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: foodr
+      POSTGRES_USER: foodr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-foodr}
+    volumes:
+      - foodr_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U foodr -d foodr']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  dienst:
+    build: .
+    image: foodr:local
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FOODR_DB: postgres://foodr:${POSTGRES_PASSWORD:-foodr}@db:5432/foodr?sslmode=disable
+      FOODR_KENNWORT: ${FOODR_KENNWORT:-}
+      FOODR_AUTOPLAN: ${FOODR_AUTOPLAN:-an}
+      OLLAMA_ADRESSE: ${OLLAMA_ADRESSE:-http://host.docker.internal:11434}
+      OLLAMA_MODELL: ${OLLAMA_MODELL:-qwen2.5:7b-instruct}
+      PORT: '8300'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '${FOODR_PORT:-8300}:8300'
+    restart: unless-stopped
+
+volumes:
+  foodr_db:
