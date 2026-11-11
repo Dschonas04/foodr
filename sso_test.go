@@ -94,6 +94,10 @@ func TestSSOAblauf(t *testing.T) {
 		t.Fatalf("API offen: %d", r.StatusCode)
 	}
 	r, err := c.Get(app.URL + "/rezepte?x=1")
+	if err != nil || r.Request.URL.Path != "/sso/seite" {
+		t.Fatalf("keine Anmeldeseite: %v %v", err, r.Request.URL)
+	}
+	r, err = c.Get(app.URL + "/sso/anmelden?ziel=" + url.QueryEscape("/rezepte?x=1"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +121,7 @@ func TestSSOAblauf(t *testing.T) {
 	}
 	// Abmelden löscht die Sitzung.
 	nc := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	if r, _ := nc.Get(app.URL + "/sso/abmelden"); r.StatusCode != 302 || !strings.HasPrefix(r.Header.Get("Location"), anbieter.URL+"/logout") {
+	if r, _ := nc.Get(app.URL + "/sso/abmelden"); r.StatusCode != 302 || !strings.HasPrefix(r.Header.Get("Location"), anbieter.URL+"/logout") || !strings.Contains(r.Header.Get("Location"), url.QueryEscape("/sso/seite?abgemeldet=1")) {
 		t.Fatalf("Abmelden: %d %s", r.StatusCode, r.Header.Get("Location"))
 	}
 	if r, _ := c.Get(app.URL + "/api/x"); r.StatusCode != 401 {
@@ -135,7 +139,7 @@ func TestSSONichtFreigegeben(t *testing.T) {
 	app := httptest.NewServer(s.Schutz(m))
 	defer app.Close()
 	jar, _ := cookiejar.New(nil)
-	r, _ := (&http.Client{Jar: jar}).Get(app.URL + "/")
+	r, _ := (&http.Client{Jar: jar}).Get(app.URL + "/sso/anmelden")
 	if r.StatusCode != 403 {
 		t.Fatalf("fremdes Konto zugelassen: %d", r.StatusCode)
 	}
@@ -224,5 +228,31 @@ func TestSSOGeheimnisBleibtBeimAnbieter(t *testing.T) {
 	put(`{"aussteller":"` + b.URL + `","clientId":"app","geheimnis":""}`)
 	if s.k.Geheimnis != "" {
 		t.Fatal("Geheimnis zu anderem Anbieter mitgenommen")
+	}
+}
+
+func TestSSOAnmeldeseite(t *testing.T) {
+	s := NeuesSSO("Test<App>", filepath.Join(t.TempDir(), "sso.json"), "TEST_SSO_AUS")
+	s.k = SSOKonfig{Aktiv: true, Aussteller: "https://kc.example/realms/homelab", ClientID: "app"}
+	m := http.NewServeMux()
+	s.Wege(m, nil)
+	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("drin")) })
+	h := s.Schutz(m)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/woche?x=1", nil))
+	if w.Code != 302 || w.Header().Get("Location") != "/sso/seite?ziel=%2Fwoche%3Fx%3D1" {
+		t.Fatalf("Umleitung: %d %s", w.Code, w.Header().Get("Location"))
+	}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/sso/seite?ziel=%2Fwoche%3Fx%3D1&abgemeldet=1", nil))
+	b := w.Body.String()
+	if w.Code != 200 || !strings.Contains(b, `href="/sso/anmelden?ziel=%2Fwoche%3Fx%3D1"`) || !strings.Contains(b, "Test&lt;App&gt;") ||
+		!strings.Contains(b, "Bereich homelab") || !strings.Contains(b, "abgemeldet") {
+		t.Fatalf("Seite: %d %s", w.Code, b)
+	}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/sso/seite?ziel=https://boese.de", nil))
+	if strings.Contains(w.Body.String(), "boese") {
+		t.Fatal("fremdes Ziel übernommen")
 	}
 }

@@ -162,6 +162,7 @@ func (s *SSO) Wege(m *http.ServeMux, einstellen func(http.HandlerFunc) http.Hand
 	if einstellen == nil {
 		einstellen = func(h http.HandlerFunc) http.HandlerFunc { return h }
 	}
+	m.HandleFunc("GET /sso/seite", s.anmeldeSeite)
 	m.HandleFunc("GET /sso/anmelden", s.start)
 	m.HandleFunc("GET /sso/zurueck", s.zurueck)
 	m.HandleFunc("GET /sso/abmelden", s.abmelden)
@@ -197,10 +198,10 @@ func (s *SSO) Schutz(n http.Handler) http.Handler {
 		if strings.HasPrefix(r.URL.Path, "/api/") || r.Method != http.MethodGet {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			_, _ = io.WriteString(w, `{"fehler":"Bitte anmelden","error":"Bitte anmelden","sso":"/sso/anmelden"}`)
+			_, _ = io.WriteString(w, `{"fehler":"Bitte anmelden","error":"Bitte anmelden","sso":"/sso/seite"}`)
 			return
 		}
-		http.Redirect(w, r, "/sso/anmelden?ziel="+url.QueryEscape(r.URL.RequestURI()), http.StatusFound)
+		http.Redirect(w, r, "/sso/seite?ziel="+url.QueryEscape(r.URL.RequestURI()), http.StatusFound)
 	})
 }
 
@@ -560,7 +561,7 @@ func (s *SSO) abmelden(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, s.Startseite, http.StatusFound)
 		return
 	}
-	q := url.Values{"client_id": {k.ClientID}, "post_logout_redirect_uri": {s.basis(r) + "/"}}
+	q := url.Values{"client_id": {k.ClientID}, "post_logout_redirect_uri": {s.basis(r) + "/sso/seite?abgemeldet=1"}}
 	http.Redirect(w, r, a.Abmelden+"?"+q.Encode(), http.StatusFound)
 }
 
@@ -664,17 +665,103 @@ func ssoJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func (s *SSO) fehlerSeite(w http.ResponseWriter, text string) {
+// Die Anmeldeseite sieht aus wie die von Nexora: graue Fläche, eine Karte,
+// ein blauer Knopf. Hell oder dunkel nach Systemeinstellung.
+const ssoSeitenStil = `:root{--bg:#f7f7f6;--flaeche:#fff;--grund:#efefed;--text:#37352f;--muted:#86847f;--border:#e2e2df;--accent:#1b6ec2;
+--fehler-bg:#fdecea;--fehler-text:#c0392b;--ok-bg:rgba(46,160,67,.12);--ok-text:#1a7f37;--radius:6px;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#1f1f1e;--flaeche:#2a2a28;--grund:#191918;--text:#e6e5e2;--muted:#9a9892;--border:#3a3a37;
+--accent:#2f80d1;--fehler-bg:rgba(207,34,46,.16);--fehler-text:#f28b82;--ok-bg:rgba(46,160,67,.16);--ok-text:#7ee2a0}}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--text);background:var(--grund);
+display:flex;align-items:center;justify-content:center;padding:16px;-webkit-font-smoothing:antialiased}
+.karte{background:var(--flaeche);border:1px solid var(--border);border-radius:10px;padding:32px;width:340px;max-width:100%;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+h1{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:600;margin:0 0 4px}h1 img{width:26px;height:26px;border-radius:6px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 20px}
+.meldung{border-radius:var(--radius);padding:8px 11px;font-size:13px;margin:0 0 12px;background:var(--fehler-bg);color:var(--fehler-text)}
+.meldung.ok{background:var(--ok-bg);color:var(--ok-text)}
+.knopf{display:block;width:100%;padding:9px;margin-top:6px;font-size:14px;font-weight:500;text-align:center;text-decoration:none;
+color:#fff;background:var(--accent);border:1px solid var(--accent);border-radius:var(--radius)}
+.knopf:hover{filter:brightness(.92)}.knopf:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fuss{text-align:center;font-size:12px;color:var(--muted);margin:16px 0 0;overflow-wrap:anywhere}`
+
+type ssoSeitenInhalt struct {
+	Code       int
+	Unterzeile string
+	Meldung    string
+	Gut        bool // Meldung grün statt rot
+	Knopf      string
+	Ziel       string
+	Fuss       string
+}
+
+func (s *SSO) seite(w http.ResponseWriter, i ssoSeitenInhalt) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusForbidden)
-	fmt.Fprintf(w, `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>%[1]s – Anmeldung</title>
-<style>body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f7f6;color:#37352f;display:grid;place-items:center;min-height:100vh;margin:0}
-main{background:#fff;border:1px solid #e2e2df;border-radius:10px;padding:28px 32px;max-width:440px}
-h1{font-size:20px;margin:0 0 8px}a{color:#1b6ec2}
-@media (prefers-color-scheme:dark){body{background:#1f1f1e;color:#e6e5e2}main{background:#2a2a28;border-color:#3a3a37}a{color:#4a9ae8}}</style>
-<main><h1>Anmeldung bei %[1]s nicht möglich</h1><p>%[2]s</p><p><a href="/sso/anmelden">Noch einmal versuchen</a></p></main></html>`,
-		ssoHTML(s.App), ssoHTML(text))
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	if i.Code == 0 {
+		i.Code = http.StatusOK
+	}
+	w.WriteHeader(i.Code)
+	meldung := ""
+	if i.Meldung != "" {
+		klasse := "meldung"
+		if i.Gut {
+			klasse += " ok"
+		}
+		meldung = fmt.Sprintf(`<p class="%s" role="status">%s</p>`, klasse, ssoHTML(i.Meldung))
+	}
+	fuss := ""
+	if i.Fuss != "" {
+		fuss = `<p class="fuss">` + ssoHTML(i.Fuss) + `</p>`
+	}
+	fmt.Fprintf(w, `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>%[1]s – Anmelden</title><link rel="icon" href="/favicon.svg"><style>%[2]s</style></head>
+<body><main class="karte"><h1><img src="/favicon.svg" alt="">%[1]s</h1><p class="sub">%[3]s</p>%[4]s<a class="knopf" href="%[5]s">%[6]s</a>%[7]s</main></body></html>`,
+		ssoHTML(s.App), ssoSeitenStil, ssoHTML(i.Unterzeile), meldung, ssoHTML(i.Ziel), ssoHTML(i.Knopf), fuss)
+}
+
+// anbieterName steht unter dem Knopf, damit klar ist, wohin es geht.
+func ssoAnbieterName(aussteller string) string {
+	u, err := url.Parse(aussteller)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	if _, realm, ok := strings.Cut(u.Path, "/realms/"); ok && realm != "" {
+		return "über " + u.Hostname() + " · Bereich " + strings.Trim(realm, "/")
+	}
+	return "über " + u.Hostname()
+}
+
+// anmeldeSeite: GET /sso/seite. Hierher schickt Schutz, wer nicht angemeldet ist.
+func (s *SSO) anmeldeSeite(w http.ResponseWriter, r *http.Request) {
+	ziel := ssoZiel(r.URL.Query().Get("ziel"))
+	if !s.An() {
+		http.Redirect(w, r, s.Startseite, http.StatusFound)
+		return
+	}
+	if _, ok := s.Wer(r); ok {
+		if ziel == "" {
+			ziel = s.Startseite
+		}
+		http.Redirect(w, r, ziel, http.StatusFound)
+		return
+	}
+	start := "/sso/anmelden"
+	if ziel != "" {
+		start += "?ziel=" + url.QueryEscape(ziel)
+	}
+	i := ssoSeitenInhalt{Unterzeile: "Melde dich an, um weiterzumachen.", Knopf: "Mit SSO anmelden", Ziel: start,
+		Fuss: ssoAnbieterName(s.konfig().Aussteller)}
+	if r.URL.Query().Has("abgemeldet") {
+		i.Meldung, i.Gut = "Du bist abgemeldet.", true
+	}
+	s.seite(w, i)
+}
+
+func (s *SSO) fehlerSeite(w http.ResponseWriter, text string) {
+	s.seite(w, ssoSeitenInhalt{Code: http.StatusForbidden, Unterzeile: "Anmeldung nicht möglich", Meldung: text,
+		Knopf: "Noch einmal versuchen", Ziel: "/sso/seite", Fuss: ssoAnbieterName(s.konfig().Aussteller)})
 }
 
 func ssoHTML(s string) string {
