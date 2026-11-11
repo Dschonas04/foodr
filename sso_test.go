@@ -163,6 +163,9 @@ func TestSSOFreigabe(t *testing.T) {
 	if ssoErlaubt("a@b.de", n) {
 		t.Fatal("unbestätigte Adresse zugelassen")
 	}
+	if ssoErlaubt("a@b.de", SSONutzer{Nutzer: "a@b.de"}) {
+		t.Fatal("Nutzername als Adresse zugelassen")
+	}
 	n.EmailBestaetigt = true
 	if !ssoErlaubt("x@y.de, a@b.de", n) || !ssoErlaubt("Jonas", n) || !ssoErlaubt("u1", n) || ssoErlaubt("anna", n) {
 		t.Fatal("Freigabeliste falsch ausgewertet")

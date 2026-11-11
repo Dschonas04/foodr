@@ -529,9 +529,19 @@ func ssoErlaubt(liste string, n SSONutzer) bool {
 	}
 	for _, e := range strings.FieldsFunc(liste, func(r rune) bool { return r == ',' || r == ';' || r == ' ' || r == '\n' }) {
 		e = strings.ToLower(strings.TrimSpace(e))
-		// Die Adresse zählt nur, wenn der Anbieter sie als bestätigt meldet:
-		// sonst könnte sich jemand eine fremde Adresse ins Profil schreiben.
-		if e != "" && ((n.EmailBestaetigt && e == n.Email) || e == strings.ToLower(n.Nutzer) || e == strings.ToLower(n.Kennung)) {
+		if e == "" {
+			continue
+		}
+		// Ein Eintrag mit @ ist eine Adresse und zählt nur, wenn der Anbieter
+		// sie als bestätigt meldet: sonst könnte sich jemand eine fremde
+		// Adresse ins Profil oder als Nutzernamen eintragen.
+		if strings.Contains(e, "@") {
+			if n.EmailBestaetigt && e == n.Email {
+				return true
+			}
+			continue
+		}
+		if e == strings.ToLower(n.Nutzer) || e == strings.ToLower(n.Kennung) {
 			return true
 		}
 	}
