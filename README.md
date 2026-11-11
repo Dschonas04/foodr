@@ -1,5 +1,7 @@
 # Foodr
 
+<img src="docs/logo.svg" alt="" width="96" align="right">
+
 Essensplaner mit Lebensmitteldatenbank für den eigenen Haushalt, als
 Webanwendung. Rezepte wandern in einen Pool, ein lokales Sprachmodell (Ollama)
 wählt daraus die Woche aus, Foodr rechnet Einkaufsliste und Nährwerte. Nichts
