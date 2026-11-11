@@ -3,27 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2e6b4e">
+<meta name="theme-color" content="#f7f7f6">
 <title>Foodr</title>
 <style>
-@font-face {
-  font-family: "Bricolage"; font-style: normal; font-weight: 400 700; font-display: swap;
-  src: url(schrift/bricolage-latin.woff2) format("woff2");
-}
 :root {
-  --grund: #f1f4ef; --flaeche: #ffffff; --flaeche2: #e8ede6; --tinte: #18241d; --leise: #5e6b62;
-  --linie: #dce3da; --gruen: #2e6b4e; --gruen-hell: #e2efe7; --warn: #a8432f;
+  --grund: #f7f7f6; --flaeche: #ffffff; --flaeche2: #e7e7e4; --tinte: #37352f; --leise: #86847f;
+  --linie: #e2e2df; --gruen: #1b6ec2; --gruen-hell: #e7f0fb; --warn: #c0392b; --leiste: #efefed;
   --eiweiss: #3f6fa8; --fett: #d9a21b; --kh: #8c6bb0; --ballast: #6e9c5a;
   --ns-a: #1e8a4c; --ns-b: #7ab648; --ns-c: #f2c12e; --ns-d: #e8822d; --ns-e: #d6452b;
   --schrift: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --anzeige: "Bricolage", var(--schrift);
-  --r1: 6px; --r2: 12px; --r3: 18px;
+  --anzeige: var(--schrift);
+  --r1: 6px; --r2: 6px; --r3: 10px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --grund: #101612; --flaeche: #18201b; --flaeche2: #212b24; --tinte: #e5ece6; --leise: #93a198;
-    --linie: #2a352e; --gruen: #6cc093; --gruen-hell: #1f3328; --warn: #e07a62;
+    --grund: #1f1f1e; --flaeche: #2a2a28; --flaeche2: #333330; --tinte: #e6e5e2; --leise: #9a9892;
+    --linie: #3a3a37; --gruen: #4a9ae8; --gruen-hell: rgba(35, 131, 226, .18); --warn: #f28b82; --leiste: #191918;
     --eiweiss: #7ea6da; --fett: #e8b84a; --kh: #b79ad6; --ballast: #8fbf7a; color-scheme: dark;
   }
 }
@@ -36,24 +32,27 @@ a { color: var(--gruen); }
 .zahl, td.z, .wertzahl { font-variant-numeric: tabular-nums; }
 
 /* Rahmen: Leiste links, am Telefon unten */
-.rahmen { display: grid; grid-template-columns: 236px 1fr; min-height: 100vh; }
-.leiste { position: sticky; top: 0; height: 100vh; padding: 26px 18px; display: flex; flex-direction: column;
-          gap: 28px; border-right: 1px solid var(--linie); background: var(--grund); }
-.marke { font-family: var(--anzeige); font-size: 34px; font-weight: 700; letter-spacing: -.04em;
-         line-height: 1; color: var(--tinte); text-decoration: none; padding-left: 10px; }
-.marke span { color: var(--gruen); }
-.nav { display: flex; flex-direction: column; gap: 2px; }
-.nav a { display: flex; gap: 12px; align-items: center; padding: 9px 10px; border-radius: var(--r1);
-         color: var(--leise); text-decoration: none; font-weight: 500; }
-.nav a:hover { color: var(--tinte); background: var(--flaeche2); }
-.nav a[aria-current="page"] { color: var(--tinte); background: var(--flaeche); box-shadow: inset 3px 0 0 var(--gruen); }
-.nav svg { width: 19px; height: 19px; flex: none; }
-.leistenfuss { margin-top: auto; font-size: 12.5px; color: var(--leise); display: grid; gap: 6px; padding-left: 10px; }
+.rahmen { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+.leiste { position: sticky; top: 0; height: 100vh; padding: 14px 8px 0; display: flex; flex-direction: column;
+          gap: 14px; border-right: 1px solid var(--linie); background: var(--leiste); }
+.marke { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+         line-height: 1; color: var(--tinte); text-decoration: none; padding: 0 6px; }
+.marke img { width: 22px; height: 22px; flex: none; }
+.nav { display: flex; flex-direction: column; gap: 1px; }
+.nav::before { content: "Bereiche"; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+               color: var(--leise); padding: 4px 8px; }
+.nav a { display: flex; gap: 8px; align-items: center; padding: 4px 8px; border-radius: var(--r1);
+         color: var(--tinte); text-decoration: none; font-size: 14px; }
+.nav a:hover { background: var(--flaeche2); }
+.nav a[aria-current="page"] { background: var(--flaeche2); font-weight: 500; }
+.nav svg { width: 16px; height: 16px; flex: none; color: var(--leise); }
+.leistenfuss { margin-top: auto; font-size: 13px; color: var(--leise); display: grid; gap: 4px; padding: 8px 8px 10px;
+               border-top: 1px solid var(--linie); margin-left: -8px; margin-right: -8px; padding-left: 16px; }
 .punkt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--leise); margin-right: 6px; }
 .punkt.an { background: var(--gruen); }
-main { padding: 34px 40px 80px; max-width: 1120px; width: 100%; }
-.kopfleiste { display: none; align-items: center; justify-content: space-between; padding: 14px 16px 0; }
-.kopfleiste .marke { font-size: 28px; padding: 0; }
+main { padding: 56px 48px 80px; max-width: 1200px; width: 100%; margin: 0 auto; }
+.kopfleiste { display: none; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--leiste); border-bottom: 1px solid var(--linie); }
+.kopfleiste .marke { padding: 0; }
 @media (max-width: 860px) {
   .rahmen { grid-template-columns: 1fr; }
   .leiste { position: fixed; z-index: 20; top: auto; bottom: 0; left: 0; right: 0; height: auto; padding: 6px 8px;
@@ -61,16 +60,19 @@ main { padding: 34px 40px 80px; max-width: 1120px; width: 100%; }
             border-top: 1px solid var(--linie); background: var(--flaeche); }
   .leiste .marke, .leistenfuss { display: none; }
   .nav { flex-direction: row; width: 100%; justify-content: space-around; }
-  .nav a { flex-direction: column; gap: 2px; font-size: 11px; padding: 6px 4px; flex: 1; }
-  .nav a[aria-current="page"] { box-shadow: none; color: var(--gruen); background: transparent; }
+  .nav::before { display: none; }
+  .nav a { flex-direction: column; gap: 2px; font-size: 11px; padding: 6px 4px; flex: 1; color: var(--leise); }
+  .nav svg { width: 19px; height: 19px; }
+  .nav a[aria-current="page"] { color: var(--gruen); background: transparent; }
+  .nav a[aria-current="page"] svg { color: var(--gruen); }
   .kopfleiste { display: flex; }
   main { padding: 18px 16px 110px; }
 }
 
 /* Seitenkopf */
 .seitenkopf { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
-h1 { font-family: var(--anzeige); font-size: clamp(28px, 4vw, 40px); font-weight: 650; letter-spacing: -.03em; line-height: 1.05; margin: 0; }
-h2 { font-family: var(--anzeige); font-size: 20px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 12px; }
+h1 { font-size: clamp(28px, 4vw, 38px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin: 0; }
+h2 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 12px; }
 h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
 .unterzeile { color: var(--leise); margin: 6px 0 0; }
 .zurueck { display: inline-flex; gap: 6px; align-items: center; color: var(--leise); text-decoration: none; font-size: 14px; margin-bottom: 10px; }
@@ -78,23 +80,23 @@ h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
 .zurueck svg { width: 16px; height: 16px; flex: none; }
 
 /* Bausteine */
-.feld { background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r2); padding: 20px; }
+.feld { background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r2); padding: 16px 18px; }
 .feld + .feld, .abstand { margin-top: 16px; }
 .leise { color: var(--leise); }
 .klein { font-size: 13px; }
-.knopf { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--linie); background: var(--flaeche);
-         border-radius: var(--r1); padding: 8px 14px; cursor: pointer; font-weight: 500; text-decoration: none; color: var(--tinte); }
-.knopf:hover { border-color: var(--leise); }
+.knopf { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--linie); background: var(--flaeche);
+         border-radius: var(--r1); padding: 5px 12px; cursor: pointer; font-size: 13px; text-decoration: none; color: var(--tinte); }
+.knopf:hover { background: var(--flaeche2); }
 .knopf.haupt { background: var(--gruen); border-color: var(--gruen); color: #fff; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .knopf.haupt { color: #0d1a12; } }
-.knopf.haupt:hover { filter: brightness(1.08); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .knopf.haupt { color: #fff; } }
+.knopf.haupt:hover { filter: brightness(.92); background: var(--gruen); }
 .knopf.still { border-color: transparent; background: transparent; color: var(--leise); padding: 6px 8px; }
 .knopf.still:hover { color: var(--tinte); background: var(--flaeche2); }
 .knopf:disabled { opacity: .5; cursor: default; }
-.knopf svg { width: 17px; height: 17px; }
+.knopf svg { width: 15px; height: 15px; }
 .reihe { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .zwischen { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
-input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--linie); border-radius: var(--r1); background: var(--flaeche); }
+input, select, textarea { width: 100%; padding: 6px 10px; border: 1px solid var(--linie); border-radius: var(--r1); background: var(--flaeche); }
 input:focus, select:focus, textarea:focus { border-color: var(--gruen); outline: none; box-shadow: 0 0 0 3px var(--gruen-hell); }
 label.ueber { display: block; font-size: 13px; color: var(--leise); margin: 14px 0 5px; }
 .raster2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -235,7 +237,7 @@ ol.schritte li::before { content: counter(s); font-family: var(--anzeige); font-
 .eintrag { display: grid; grid-template-columns: 44px minmax(0, 1fr) 150px 92px; gap: 16px; align-items: center; padding: 11px 16px;
            border-top: 1px solid var(--linie); color: var(--tinte); text-decoration: none; }
 .eintrag:first-child { border-top: 0; }
-.eintrag:hover { background: var(--grund); }
+.eintrag:hover { background: var(--flaeche2); }
 .eintrag .name { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .eintrag .zusatz { font-size: 13px; color: var(--leise); display: flex; gap: 8px; align-items: center; overflow: hidden; white-space: nowrap; }
 .eintrag > :last-child { text-align: right; font-size: 17px; }
@@ -261,23 +263,23 @@ ol.schritte li::before { content: counter(s); font-family: var(--anzeige); font-
 .fortschritt { height: 6px; background: var(--flaeche2); border-radius: 3px; overflow: hidden; margin-top: 10px; }
 .fortschritt i { display: block; height: 100%; background: var(--gruen); transition: width .4s; }
 
-dialog { border: 1px solid var(--linie); border-radius: var(--r3); background: var(--flaeche); color: var(--tinte);
+dialog { box-shadow: 0 8px 30px rgba(0, 0, 0, .18); border: 1px solid var(--linie); border-radius: var(--r3); background: var(--flaeche); color: var(--tinte);
          width: min(640px, calc(100vw - 24px)); padding: 22px; }
-dialog::backdrop { background: rgba(10, 20, 14, .45); }
+dialog::backdrop { background: rgba(15, 15, 15, .35); }
 .wahlliste { max-height: 50vh; overflow: auto; margin-top: 12px; border: 1px solid var(--linie); border-radius: var(--r1); }
 .wahlliste button { display: grid; grid-template-columns: 1fr auto; gap: 12px; width: 100%; text-align: left; border: 0;
                     border-top: 1px solid var(--linie); background: none; padding: 10px 12px; cursor: pointer; }
 .wahlliste button:first-child { border-top: 0; }
-.wahlliste button:hover { background: var(--grund); }
+.wahlliste button:hover { background: var(--flaeche2); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   </head>
 <body>
-<div class="kopfleiste"><a class="marke" href="#/woche">food<span>r</span></a></div>
+<div class="kopfleiste"><a class="marke" href="#/woche"><img src="favicon.svg" alt="">Foodr</a></div>
 <div class="rahmen">
   <aside class="leiste">
-    <a class="marke" href="#/woche">food<span>r</span></a>
+    <a class="marke" href="#/woche"><img src="favicon.svg" alt="">Foodr</a>
     <nav class="nav" aria-label="Bereiche">
       <a href="#/woche" data-bereich="woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Woche</a>
       <a href="#/einkauf" data-bereich="einkauf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h2l2 11h10l2-8H7"/><circle cx="10" cy="19.5" r="1.2"/><circle cx="17" cy="19.5" r="1.2"/></svg>Einkauf</a>

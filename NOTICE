@@ -22,6 +22,3 @@ Inhalte unter der Database Contents License 1.0. Foodr lädt den Export zur
 Laufzeit herunter und übernimmt Name, Marke, Menge, Barcode, Nutri-Score,
 NOVA-Gruppe, Zutaten, Allergene, Siegel, Länder, Bildadresse und Nährwerte;
 Nährwerte werden in die Einheiten des BLS umgerechnet (g, mg, µg).
-
-Schrift: Bricolage Grotesque, Copyright 2022 The Bricolage Grotesque Project
-Authors, SIL Open Font License 1.1 (web/schrift/OFL.txt).

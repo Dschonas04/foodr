@@ -181,6 +181,3 @@ Die Markenprodukte stammen aus **[Open Food Facts](https://world.openfoodfacts.o
 und stehen unter der [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/),
 die einzelnen Inhalte unter der [Database Contents License](https://opendatacommons.org/licenses/dbcl/1-0/).
 Foodr lädt sie beim Betrieb herunter; im Repository sind sie nicht enthalten.
-
-Die Schrift Bricolage Grotesque (Überschriften) steht unter der
-[SIL Open Font License 1.1](web/schrift/OFL.txt).
