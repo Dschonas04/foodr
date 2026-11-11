@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -154,5 +155,47 @@ func TestSSOZielUndNotaus(t *testing.T) {
 	s.k = SSOKonfig{Aktiv: true, Aussteller: "x", ClientID: "y"}
 	if s.An() {
 		t.Fatal("Notaus wirkt nicht")
+	}
+}
+
+func TestSSOFreigabe(t *testing.T) {
+	n := SSONutzer{Kennung: "u1", Email: "a@b.de", Nutzer: "jonas"}
+	if ssoErlaubt("a@b.de", n) {
+		t.Fatal("unbestätigte Adresse zugelassen")
+	}
+	n.EmailBestaetigt = true
+	if !ssoErlaubt("x@y.de, a@b.de", n) || !ssoErlaubt("Jonas", n) || !ssoErlaubt("u1", n) || ssoErlaubt("anna", n) {
+		t.Fatal("Freigabeliste falsch ausgewertet")
+	}
+	for _, z := range []string{"/\tx", "/a\nb", "/x\x00"} {
+		if ssoZiel(z) != "" {
+			t.Fatalf("%q durchgelassen", z)
+		}
+	}
+	s := NeuesSSO("Test", filepath.Join(t.TempDir(), "sso.json"), "TEST_SSO_AUS")
+	if _, err := s.anbieter(context.Background(), "http://keycloak.example:8080/realms/x"); err == nil {
+		t.Fatal("http-Aussteller angenommen")
+	}
+}
+
+func TestSSOSitzungVerfaellt(t *testing.T) {
+	s := NeuesSSO("Test", filepath.Join(t.TempDir(), "sso.json"), "TEST_SSO_AUS")
+	s.k = SSOKonfig{Aktiv: true, Aussteller: "https://a", ClientID: "app"}
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	s.setzen(w, r, ssoKeks, ssoSitzung{SSONutzer: SSONutzer{Kennung: "u1", Nutzer: "jonas"}, Aussteller: "https://a", ClientID: "app",
+		Bis: time.Now().Add(time.Hour).Unix()}, time.Hour)
+	r.AddCookie(w.Result().Cookies()[0])
+	if _, ok := s.Wer(r); !ok {
+		t.Fatal("gültige Sitzung abgelehnt")
+	}
+	s.k.Erlaubt = "anna"
+	if _, ok := s.Wer(r); ok {
+		t.Fatal("Sitzung überlebt geänderte Freigabe")
+	}
+	s.k.Erlaubt = ""
+	s.k.ClientID = "andere"
+	if _, ok := s.Wer(r); ok {
+		t.Fatal("Sitzung überlebt anderen Client")
 	}
 }

@@ -43,8 +43,8 @@ type SSOKonfig struct {
 	Geheimnis  string `json:"geheimnis,omitempty"`
 	// Adresse, unter der die App erreichbar ist. Leer: aus der Anfrage.
 	Adresse string `json:"adresse"`
-	// Kommagetrennte E-Mail-Adressen oder Nutzernamen. Leer: jeder, den der
-	// Anbieter anmeldet.
+	// Kommagetrennte E-Mail-Adressen (nur bestätigte zählen), Nutzernamen
+	// oder Kennungen (sub). Leer: jeder, den der Anbieter anmeldet.
 	Erlaubt string `json:"erlaubt"`
 }
 
@@ -139,6 +139,9 @@ func (s *SSO) sichern() error {
 
 // An sagt, ob SSO gerade gilt.
 func (s *SSO) An() bool {
+	if s == nil {
+		return false
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return !s.notaus && s.k.Aktiv && s.k.Aussteller != "" && s.k.ClientID != ""
@@ -153,6 +156,9 @@ func (s *SSO) konfig() SSOKonfig {
 // Wege hängt die SSO-Adressen an. einstellen schützt das Ändern der
 // Einstellung zusätzlich (z. B. mit dem Kennwort der App); nil = nur SSO.
 func (s *SSO) Wege(m *http.ServeMux, einstellen func(http.HandlerFunc) http.HandlerFunc) {
+	if s == nil {
+		return
+	}
 	if einstellen == nil {
 		einstellen = func(h http.HandlerFunc) http.HandlerFunc { return h }
 	}
@@ -168,6 +174,9 @@ func (s *SSO) Wege(m *http.ServeMux, einstellen func(http.HandlerFunc) http.Hand
 
 // Schutz lässt bei aktivem SSO nur Angemeldete durch.
 func (s *SSO) Schutz(n http.Handler) http.Handler {
+	if s == nil {
+		return n
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !s.Sperre || !s.An() || s.frei(r.URL.Path) {
 			n.ServeHTTP(w, r)
@@ -202,14 +211,27 @@ func (s *SSO) frei(pfad string) bool {
 
 // Wer liest die Sitzung aus dem Keks.
 func (s *SSO) Wer(r *http.Request) (SSONutzer, bool) {
-	var n struct {
-		SSONutzer
-		Bis int64 `json:"bis"`
+	if s == nil {
+		return SSONutzer{}, false
 	}
+	var n ssoSitzung
 	if !s.lesen(r, ssoKeks, &n) || time.Now().Unix() > n.Bis {
 		return SSONutzer{}, false
 	}
+	// Wechselt der Anbieter, der Client oder die Freigabeliste, gelten alte
+	// Sitzungen nicht mehr.
+	k := s.konfig()
+	if n.Aussteller != k.Aussteller || n.ClientID != k.ClientID || !ssoErlaubt(k.Erlaubt, n.SSONutzer) {
+		return SSONutzer{}, false
+	}
 	return n.SSONutzer, true
+}
+
+type ssoSitzung struct {
+	SSONutzer
+	Aussteller string `json:"iss"`
+	ClientID   string `json:"aud"`
+	Bis        int64  `json:"bis"`
 }
 
 // ---------- Kekse ----------
@@ -267,6 +289,11 @@ func (s *SSO) anbieter(ctx context.Context, aussteller string) (ssoAnbieter, err
 	aussteller = strings.TrimSuffix(strings.TrimSpace(aussteller), "/")
 	if aussteller == "" {
 		return a, errors.New("kein Aussteller eingetragen")
+	}
+	u, err := url.Parse(aussteller)
+	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" ||
+		(u.Scheme != "https" && !(u.Scheme == "http" && ssoLokal(u.Hostname()))) {
+		return a, errors.New("Der Aussteller muss eine https-Adresse sein.")
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, aussteller+"/.well-known/openid-configuration", nil)
 	res, err := s.client.Do(req)
@@ -385,10 +412,8 @@ func (s *SSO) zurueck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		s.setzen(w, r, ssoKeks, struct {
-			SSONutzer
-			Bis int64 `json:"bis"`
-		}{nutzer, time.Now().Add(ssoDauer).Unix()}, ssoDauer)
+		s.setzen(w, r, ssoKeks, ssoSitzung{SSONutzer: nutzer, Aussteller: k.Aussteller, ClientID: k.ClientID,
+			Bis: time.Now().Add(ssoDauer).Unix()}, ssoDauer)
 	}
 	ziel := weg.Ziel
 	if ziel == "" {
@@ -495,7 +520,9 @@ func ssoErlaubt(liste string, n SSONutzer) bool {
 	}
 	for _, e := range strings.FieldsFunc(liste, func(r rune) bool { return r == ',' || r == ';' || r == ' ' || r == '\n' }) {
 		e = strings.ToLower(strings.TrimSpace(e))
-		if e != "" && (e == n.Email || e == strings.ToLower(n.Nutzer)) {
+		// Die Adresse zählt nur, wenn der Anbieter sie als bestätigt meldet:
+		// sonst könnte sich jemand eine fremde Adresse ins Profil schreiben.
+		if e != "" && ((n.EmailBestaetigt && e == n.Email) || e == strings.ToLower(n.Nutzer) || e == strings.ToLower(n.Kennung)) {
 			return true
 		}
 	}
@@ -630,10 +657,24 @@ func ssoHTML(s string) string {
 
 // sicheresZiel lässt nur Pfade dieser App zu, keine fremden Adressen.
 func ssoZiel(z string) string {
-	if !strings.HasPrefix(z, "/") || strings.HasPrefix(z, "//") || strings.HasPrefix(z, "/\\") || strings.HasPrefix(z, "/sso/") {
+	if !strings.HasPrefix(z, "/") || strings.HasPrefix(z, "//") || strings.HasPrefix(z, "/sso/") ||
+		strings.ContainsAny(z, "\\\r\n\t") || len(z) > 2000 {
+		return ""
+	}
+	for _, c := range z {
+		if c < 0x20 || c == 0x7f {
+			return ""
+		}
+	}
+	u, err := url.Parse(z)
+	if err != nil || u.Scheme != "" || u.Host != "" || u.User != nil {
 		return ""
 	}
 	return z
+}
+
+func ssoLokal(host string) bool {
+	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }
 
 func ssoZufallsBytes(n int) []byte {
