@@ -167,6 +167,14 @@ func (s *SSO) Wege(m *http.ServeMux, einstellen func(http.HandlerFunc) http.Hand
 	m.HandleFunc("GET /sso/abmelden", s.abmelden)
 	m.HandleFunc("POST /sso/abmelden", s.abmelden)
 	m.HandleFunc("GET /api/sso/status", s.status)
+	// Für einen vorgeschalteten nginx (auth_request): 204 = herein, 401 = anmelden.
+	m.HandleFunc("GET /api/sso/pruefen", func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := s.Wer(r); ok || !s.Sperre || !s.An() || (s.Durchlass != nil && s.Durchlass(r)) {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.WriteHeader(http.StatusUnauthorized)
+	})
 	m.HandleFunc("GET /api/sso/einstellungen", einstellen(s.einstellungenLesen))
 	m.HandleFunc("PUT /api/sso/einstellungen", einstellen(s.einstellungenSchreiben))
 	m.HandleFunc("POST /api/sso/testen", einstellen(s.testen))
@@ -197,7 +205,7 @@ func (s *SSO) Schutz(n http.Handler) http.Handler {
 }
 
 func (s *SSO) frei(pfad string) bool {
-	if strings.HasPrefix(pfad, "/sso/") || pfad == "/api/sso/status" ||
+	if strings.HasPrefix(pfad, "/sso/") || pfad == "/api/sso/status" || pfad == "/api/sso/pruefen" ||
 		pfad == "/favicon.svg" || pfad == "/favicon.ico" {
 		return true
 	}
@@ -298,17 +306,18 @@ func (s *SSO) anbieter(ctx context.Context, aussteller string) (ssoAnbieter, err
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, aussteller+"/.well-known/openid-configuration", nil)
 	res, err := s.client.Do(req)
 	if err != nil {
-		return a, fmt.Errorf("Aussteller nicht erreichbar: %v", err)
+		log.Printf("sso: %s nicht erreichbar: %v", aussteller, err)
+		return a, errors.New("Aussteller nicht erreichbar")
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		return a, fmt.Errorf("Aussteller antwortet mit %s", res.Status)
 	}
 	if err := json.NewDecoder(io.LimitReader(res.Body, 1<<20)).Decode(&a); err != nil {
-		return a, fmt.Errorf("Antwort des Ausstellers unlesbar: %v", err)
+		return a, errors.New("Antwort des Ausstellers unlesbar")
 	}
 	if strings.TrimSuffix(a.Issuer, "/") != aussteller {
-		return a, fmt.Errorf("Aussteller meldet sich als %q", a.Issuer)
+		return a, errors.New("Der Aussteller meldet sich unter einer anderen Adresse")
 	}
 	if a.Auth == "" || a.Token == "" {
 		return a, errors.New("Aussteller nennt keine Endpunkte")
@@ -583,7 +592,13 @@ func (s *SSO) einstellungenSchreiben(w http.ResponseWriter, r *http.Request) {
 	neu.Adresse = strings.TrimSuffix(strings.TrimSpace(neu.Adresse), "/")
 	alt := s.konfig()
 	if neu.GeheimnisBehalten || neu.Geheimnis == "" {
-		neu.Geheimnis = alt.Geheimnis
+		// Das alte Geheimnis bleibt nur beim selben Anbieter und Client:
+		// sonst ließe es sich an einen fremden Token-Endpunkt umlenken.
+		if neu.Aussteller != alt.Aussteller || neu.ClientID != alt.ClientID {
+			neu.Geheimnis = ""
+		} else {
+			neu.Geheimnis = alt.Geheimnis
+		}
 	}
 	if neu.Adresse != "" {
 		if u, err := url.Parse(neu.Adresse); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
@@ -626,7 +641,8 @@ func (s *SSO) testen(w http.ResponseWriter, r *http.Request) {
 		ssoJSON(w, http.StatusOK, map[string]any{"ok": false, "meldung": err.Error()})
 		return
 	}
-	ssoJSON(w, http.StatusOK, map[string]any{"ok": true, "meldung": "Aussteller erreichbar: " + a.Issuer})
+	_ = a
+	ssoJSON(w, http.StatusOK, map[string]any{"ok": true, "meldung": "Aussteller erreichbar."})
 }
 
 // ---------- Kleinkram ----------

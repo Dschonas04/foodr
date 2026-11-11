@@ -199,3 +199,27 @@ func TestSSOSitzungVerfaellt(t *testing.T) {
 		t.Fatal("Sitzung überlebt anderen Client")
 	}
 }
+
+func TestSSOGeheimnisBleibtBeimAnbieter(t *testing.T) {
+	a := ssoTestAnbieter(t, "x@y.de")
+	b := ssoTestAnbieter(t, "x@y.de")
+	s := NeuesSSO("Test", filepath.Join(t.TempDir(), "sso.json"), "TEST_SSO_AUS")
+	s.k = SSOKonfig{Aussteller: a.URL, ClientID: "app", Geheimnis: "geheim"}
+	m := http.NewServeMux()
+	s.Wege(m, nil)
+	put := func(k string) {
+		w := httptest.NewRecorder()
+		m.ServeHTTP(w, httptest.NewRequest(http.MethodPut, "/api/sso/einstellungen", strings.NewReader(k)))
+		if w.Code != 200 {
+			t.Fatalf("%d %s", w.Code, w.Body)
+		}
+	}
+	put(`{"aussteller":"` + a.URL + `","clientId":"app","geheimnis":""}`)
+	if s.k.Geheimnis != "geheim" {
+		t.Fatal("Geheimnis beim selben Anbieter verloren")
+	}
+	put(`{"aussteller":"` + b.URL + `","clientId":"app","geheimnis":""}`)
+	if s.k.Geheimnis != "" {
+		t.Fatal("Geheimnis zu anderem Anbieter mitgenommen")
+	}
+}
