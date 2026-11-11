@@ -31,6 +31,9 @@ services:
     environment:
       FOODR_DB: postgres://foodr:${POSTGRES_PASSWORD:-foodr}@db:5432/foodr?sslmode=disable
       FOODR_KENNWORT: ${FOODR_KENNWORT:-}
+      # SSO wird in Foodr unter „Mehr“ eingerichtet; 1 schaltet es im Notfall ab.
+      FOODR_SSO_DATEI: /einstellungen/sso.json
+      FOODR_SSO_AUS: ${FOODR_SSO_AUS:-}
       FOODR_AUTOPLAN: ${FOODR_AUTOPLAN:-an}
       FOODR_OFF: ${FOODR_OFF:-an}
       OLLAMA_ADRESSE: ${OLLAMA_ADRESSE:-http://host.docker.internal:11434}
@@ -38,9 +41,12 @@ services:
       PORT: '8300'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    volumes:
+      - foodr_einstellungen:/einstellungen
     ports:
       - '${FOODR_PORT:-8300}:8300'
     restart: unless-stopped
 
 volumes:
   foodr_db:
+  foodr_einstellungen:

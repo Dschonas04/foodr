@@ -52,12 +52,21 @@ python3 -c 'import json; [print(json.dumps(r)) for r in json.load(open("beispiel
 | `FOODR_KENNWORT` | leer | gesetzt: Anmeldung in der Oberfläche, Schnittstelle braucht Kopfzeile `X-Foodr` |
 | `FOODR_OFF` | `an` | Markenprodukte aus Open Food Facts einlesen und monatlich auffrischen |
 | `FOODR_OFF_ADRESSE` | Export von static.openfoodfacts.org | eigene Kopie des Exports |
+| `FOODR_SSO_DATEI` | `./einstellungen/sso.json` | wo die SSO-Einstellung liegt |
+| `FOODR_SSO_AUS` | leer | `1` schaltet SSO im Notfall ab |
 | `FOODR_PORT` | `8300` | Port am Wirt (nur im Verbund) |
 | `PORT` | `8300` | Port des Dienstes |
 
 Ohne Kennwort ist Foodr offen für alle, die die Adresse erreichen – gedacht
 für das eigene Netz. Wer es von außen erreichbar macht, setzt ein Kennwort
 und stellt TLS davor.
+
+**Anmeldung per SSO:** Unter *Mehr → Anmeldung (SSO)* lässt sich ein
+OpenID-Connect-Anbieter wie Keycloak eintragen: Aussteller-URL, Client-ID,
+Client-Geheimnis und auf Wunsch die erlaubten Konten. Beim Anbieter wird
+`https://<foodr>/sso/zurueck` als Weiterleitung eingetragen. Ist SSO an,
+kommt nur noch herein, wer sich dort anmeldet; Skripte mit `X-Foodr` gehen
+weiter. Wer sich ausgesperrt hat, startet mit `FOODR_SSO_AUS=1`.
 
 **Zur Modellwahl:** ein 7B-Modell, das vollständig in den Grafikspeicher
 passt, antwortet in Sekunden. Ein größeres Modell, das nicht hineinpasst,

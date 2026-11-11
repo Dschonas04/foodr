@@ -53,6 +53,12 @@ func main() {
 	)
 	planer := &Planer{ablage: ablage, ki: ki}
 	dienst := &Dienst{ablage: ablage, planer: planer, katalog: katalog, kennwort: os.Getenv("FOODR_KENNWORT")}
+	dienst.sso = NeuesSSO("Foodr", umgebung("FOODR_SSO_DATEI", "./einstellungen/sso.json"), "FOODR_SSO_AUS")
+	dienst.sso.Startseite = "/#/woche"
+	// Skripte mit dem Kennwort der App kommen auch bei SSO durch.
+	dienst.sso.Durchlass = func(r *http.Request) bool {
+		return dienst.kennwort != "" && gleich(r.Header.Get("X-Foodr"), dienst.kennwort)
+	}
 	offAdresse := umgebung("FOODR_OFF_ADRESSE", offAdresse)
 	if umgebung("FOODR_OFF", "an") == "an" {
 		go katalog.HalteOFFAktuell(offAdresse)

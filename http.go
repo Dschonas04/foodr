@@ -21,6 +21,7 @@ type Dienst struct {
 	katalog    *Katalog
 	kennwort   string
 	offAdresse string
+	sso        *SSO
 }
 
 func (d *Dienst) Wege(web http.Handler) http.Handler {
@@ -28,6 +29,7 @@ func (d *Dienst) Wege(web http.Handler) http.Handler {
 
 	m.HandleFunc("GET /api/status", d.status)
 	m.HandleFunc("POST /api/anmelden", d.anmelden)
+	d.sso.Wege(m, d.geschuetzt)
 
 	m.HandleFunc("GET /api/rezepte", d.geschuetzt(d.rezepte))
 	m.HandleFunc("POST /api/rezepte", d.geschuetzt(d.rezeptSpeichern))
@@ -72,7 +74,7 @@ func (d *Dienst) Wege(web http.Handler) http.Handler {
 	m.HandleFunc("PUT /api/regeln", d.geschuetzt(d.regelnSetzen))
 
 	m.Handle("/", web)
-	return protokoll(m)
+	return protokoll(d.sso.Schutz(m))
 }
 
 // ---------- Rahmen ----------
@@ -102,6 +104,9 @@ func (d *Dienst) geschuetzt(h http.HandlerFunc) http.HandlerFunc {
 // Skripte schicken das Kennwort in X-Foodr, der Browser einen Keks mit einem
 // davon abgeleiteten Merkmal -- nie das Kennwort selbst.
 func (d *Dienst) erlaubt(r *http.Request) bool {
+	if _, ok := d.sso.Wer(r); ok && d.sso.An() {
+		return true
+	}
 	if gleich(r.Header.Get("X-Foodr"), d.kennwort) {
 		return true
 	}

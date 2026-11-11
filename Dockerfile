@@ -6,7 +6,8 @@ COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /foodr .
 
 FROM alpine:3.24
-RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 foodr
+RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 foodr \
+ && mkdir /einstellungen && chown foodr /einstellungen
 ENV TZ=Europe/Berlin
 USER foodr
 COPY --from=bau /foodr /usr/local/bin/foodr
