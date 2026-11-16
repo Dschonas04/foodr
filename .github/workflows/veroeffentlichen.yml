@@ -1,6 +1,8 @@
 name: veröffentlichen
 
 # Ein Tag v* baut die Images für amd64 und arm64, schiebt sie nach ghcr.io
+# und, wenn die Secrets DOCKERHUB_USERNAME und DOCKERHUB_TOKEN gesetzt sind,
+# mit denselben Tags auch nach Docker Hub,
 # und legt das Release mit dem passenden Abschnitt aus CHANGELOG.md an.
 # Von Hand gestartet entsteht nur der Stand „edge“.
 
@@ -22,6 +24,9 @@ jobs:
     name: ${{ matrix.image.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
@@ -48,11 +53,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Bei Docker Hub anmelden
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
+        uses: docker/login-action@v4
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Ziele
+        id: ziele
+        env:
+          NAME: ${{ matrix.image.name }}
+        run: |
+          {
+            echo "liste<<ENDE"
+            echo "ghcr.io/${OWNER}/${NAME}"
+            if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+              echo "docker.io/${DOCKERHUB_USERNAME,,}/${NAME}"
+            fi
+            echo "ENDE"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Namen und Tags
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ env.OWNER }}/${{ matrix.image.name }}
+          images: ${{ steps.ziele.outputs.liste }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
