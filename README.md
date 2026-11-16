@@ -172,6 +172,14 @@ Die Lebensmitteldaten liegen aufbereitet in `daten/` und sind in das
 Programm eingebettet. `werkzeug/bls_umwandeln.py` erzeugt sie aus den
 Excel-Dateien des BLS neu (ohne weitere Python-Pakete).
 
+## Fertige Images
+
+Zu jedem Release liegen Images für amd64 und arm64 auf GitHub Packages:
+
+- `ghcr.io/dschonas04/foodr`
+
+Tags: `latest`, die Version (`1.2.3`) sowie `1.2` und `1`. In `docker-compose.yml` genügt `image: ghcr.io/dschonas04/foodr:1` statt `build: .`.
+
 ## Lizenz und Quellen
 
 Der Code steht unter der [MIT-Lizenz](LICENSE).
