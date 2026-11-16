@@ -78,10 +78,10 @@ func (p *Planer) Erzeuge(ctx context.Context, auf Auftrag) (*Plan, string, error
 	}
 	moeglich := filtere(rezepte, auf)
 	if len(moeglich) == 0 {
-		return nil, "", fmt.Errorf("keine passenden Rezepte im Pool — erst welche anlegen")
+		return nil, "", fmt.Errorf("keine passenden Rezepte im Pool, erst welche anlegen")
 	}
 	if len(moeglich) < len(tage) {
-		return nil, "", fmt.Errorf("nur %d passende Rezepte fuer %d Tage — der Pool ist zu klein",
+		return nil, "", fmt.Errorf("nur %d passende Rezepte fuer %d Tage, der Pool ist zu klein",
 			len(moeglich), len(tage))
 	}
 
@@ -433,7 +433,7 @@ func ersatzHinweis(r Rezept) string {
 	case r.Hinweise != "":
 		return r.Hinweise
 	case r.DauerMin >= 90:
-		return fmt.Sprintf("Dauert etwa %d Minuten — frueh anfangen.", r.DauerMin)
+		return fmt.Sprintf("Dauert etwa %d Minuten: frueh anfangen.", r.DauerMin)
 	case r.Kost == "fleisch" || r.Kost == "fisch":
 		return "Am Vortag aus dem Gefrierfach nehmen, falls eingefroren."
 	default:

@@ -818,7 +818,7 @@ func (s *SSO) seite(w http.ResponseWriter, i ssoSeitenInhalt) {
 		karte += " breit"
 	}
 	fmt.Fprintf(w, `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex"><title>%[1]s – Anmelden</title><link rel="icon" href="/favicon.svg"><style>%[2]s</style></head>
+<meta name="robots" content="noindex"><title>%[1]s: Anmelden</title><link rel="icon" href="/favicon.svg"><style>%[2]s</style></head>
 <body><main class="%[7]s"><h1><img src="/favicon.svg" alt="">%[1]s</h1><p class="sub">%[3]s</p>%[4]s%[5]s%[6]s</main></body></html>`,
 		ssoHTML(s.App), ssoSeitenStil, ssoHTML(i.Unterzeile), meldung, inhalt, fuss, karte)
 }

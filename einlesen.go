@@ -27,7 +27,7 @@ Antworte ausschliesslich mit JSON:
  "schritte":["..."],"hinweise":"","quelle":""}
 Regeln:
 - art ist hauptgericht, beilage, fruehstueck oder nachtisch.
-- kost ist vegan, vegetarisch, fisch oder fleisch — richte dich nach den Zutaten.
+- kost ist vegan, vegetarisch, fisch oder fleisch, richte dich nach den Zutaten.
 - aufwand ist schnell (bis 25 min), mittel (bis 60 min) oder aufwendig.
 - einheit ist g, kg, ml, l, EL, TL, Stueck, Prise, Bund, Zehe, Dose, Packung oder leer.
 - menge ist eine Zahl; "etwas" oder "nach Geschmack" wird 0 mit passender Einheit.

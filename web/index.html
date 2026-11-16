@@ -296,7 +296,7 @@ dialog::backdrop { background: rgba(15, 15, 15, .35); }
 const $ = (s, w = document) => w.querySelector(s);
 const $$ = (s, w = document) => [...w.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const zahl = (n, stellen = 1) => n == null || Number.isNaN(Number(n)) ? '–'
+const zahl = (n, stellen = 1) => n == null || Number.isNaN(Number(n)) ? '-'
   : Number(n).toLocaleString('de-DE', { maximumFractionDigits: stellen });
 const grosseZahl = (n) => n >= 1e6 ? zahl(n / 1e6, 1) + ' Mio.' : zahl(n, 0);
 
@@ -353,7 +353,7 @@ function streifen(w, dick = false) {
 const legende = `<div class="legende"><span><i style="background:var(--eiweiss)"></i>Eiweiß</span>
   <span><i style="background:var(--fett)"></i>Fett</span><span><i style="background:var(--kh)"></i>Kohlenhydrate</span>
   <span><i style="background:var(--ballast)"></i>Ballaststoffe</span></div>`;
-const kcal = (w, einheit = 'kcal') => w?.ENERCC == null ? '<span class="kcal leise">–</span>'
+const kcal = (w, einheit = 'kcal') => w?.ENERCC == null ? '<span class="kcal leise">-</span>'
   : `<span class="kcal">${zahl(w.ENERCC, 0)}<small>${einheit}</small></span>`;
 const werteliste = (w) => `<div class="werteliste">${KERN.map(([c, name, einheit, st, unter]) =>
   `<div class="${unter ? 'unter' : ''}">${name}</div><div class="z wertzahl">${w?.[c] == null ? '–' : zahl(w[c], st) + ' ' + einheit}</div>`).join('')}</div>`;
@@ -420,7 +420,7 @@ async function zeigeWoche() {
       <label class="ueber">An diesen Tagen wird gekocht</label>
       <div class="tagwahl">${WOCHENTAGE.map(t => `<label><input type="checkbox" data-tag="${t}" ${tage.includes(t) ? 'checked' : ''}>
         <span>${t.slice(0, 2).replace(/^./, c => c.toUpperCase())}</span></label>`).join('')}</div>
-      <label class="ueber">Nur diese Kost – nichts gewählt heißt alles</label>
+      <label class="ueber">Nur diese Kost: nichts gewählt heißt alles</label>
       <div class="tagwahl">${Object.entries(KOST).map(([k, n]) => `<label><input type="checkbox" data-kost="${k}" ${kost.includes(k) ? 'checked' : ''}>
         <span>${n}</span></label>`).join('')}</div>
       <div class="reihe abstand"><button class="knopf haupt" id="erzeugen">${p ? 'Plan neu erzeugen' : 'Plan erzeugen'}</button>
@@ -712,7 +712,7 @@ function zeigeNeu() {
         <div><label class="ueber" for="naufwand">Aufwand</label><select id="naufwand">${Object.entries(AUFWAND).map(([k, n]) =>
           `<option value="${k}" ${k === 'mittel' ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       </div>
-      <label class="ueber" for="nzutaten">Zutaten, eine je Zeile – etwa „200 g Mehl“, „2 EL Öl“, „1 Zwiebel“</label>
+      <label class="ueber" for="nzutaten">Zutaten, eine je Zeile: etwa „200 g Mehl“, „2 EL Öl“, „1 Zwiebel“</label>
       <textarea id="nzutaten" rows="8"></textarea>
       <label class="ueber" for="nschritte">Schritte, einer je Zeile</label>
       <textarea id="nschritte" rows="6"></textarea>

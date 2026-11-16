@@ -7,18 +7,18 @@ Webanwendung. Rezepte wandern in einen Pool, ein lokales Sprachmodell (Ollama)
 wählt daraus die Woche aus, Foodr rechnet Einkaufsliste und Nährwerte. Nichts
 davon verlässt das eigene Netz.
 
-* **Wochenplan** – vom Modell gewählt, einzelne Tage tauschen oder selbst
+* **Wochenplan**: vom Modell gewählt, einzelne Tage tauschen oder selbst
   belegen, abhaken, was gekocht wurde.
-* **Einkaufsliste** – auf die Personenzahl hochgerechnet, zusammengefasst,
+* **Einkaufsliste**: auf die Personenzahl hochgerechnet, zusammengefasst,
   nach Regal sortiert, ohne das, was im Vorrat steht.
-* **Rezepte** – einfügen und vom Modell einlesen lassen (Text oder Adresse)
+* **Rezepte**: einfügen und vom Modell einlesen lassen (Text oder Adresse)
   oder selbst tippen.
-* **Lebensmitteldatenbank in PostgreSQL** – 7.140 Grundlebensmittel mit 138
+* **Lebensmitteldatenbank in PostgreSQL**: 7.140 Grundlebensmittel mit 138
   Nährstoffen je 100 g aus dem Bundeslebensmittelschlüssel (BLS 4.0) und
   mehrere Millionen Markenprodukte aus Open Food Facts mit Marke, Barcode,
   Nutri-Score, NOVA-Gruppe, Zutaten und Allergenen. Suche nach Name, Marke
   oder Barcode, Filter nach Herkunft und Gruppe, dazu eigene Lebensmittel.
-* **Nährwerte** – je Portion für jedes Rezept und jeden Tag im Plan. Zutaten
+* **Nährwerte**: je Portion für jedes Rezept und jeden Tag im Plan. Zutaten
   werden von selbst einem Lebensmittel zugeordnet; was falsch getroffen ist,
   legt man einmal von Hand fest.
 
@@ -57,7 +57,7 @@ python3 -c 'import json; [print(json.dumps(r)) for r in json.load(open("beispiel
 | `FOODR_PORT` | `8300` | Port am Wirt (nur im Verbund) |
 | `PORT` | `8300` | Port des Dienstes |
 
-Ohne Kennwort ist Foodr offen für alle, die die Adresse erreichen – gedacht
+Ohne Kennwort ist Foodr offen für alle, die die Adresse erreichen, gedacht
 für das eigene Netz. Wer es von außen erreichbar macht, setzt ein Kennwort
 und stellt TLS davor.
 
@@ -89,7 +89,7 @@ Dienst ein zweites Mal nach. Was dann noch fehlt, füllt die eigene Bewertung:
   für Aufwendiges.
 
 Sonntags ab 17 Uhr plant der Dienst die kommende Woche von selbst, mit den
-Einstellungen des letzten Laufs – es sei denn, es steht schon ein Plan.
+Einstellungen des letzten Laufs: es sei denn, es steht schon ein Plan.
 
 ## Lebensmitteldatenbank
 
@@ -97,7 +97,7 @@ Einstellungen des letzten Laufs – es sei denn, es steht schon ein Plan.
 |---------|--------|----------|
 | `lebensmittel` | BLS 4.0 und eigene Lebensmittel | BLS ist eingebettet und wird beim ersten Start eingelesen |
 | `produkte` | Markenprodukte | Open-Food-Facts-Export, beim ersten Start und danach alle 30 Tage |
-| `alle_lebensmittel` | Sicht über beide | – |
+| `alle_lebensmittel` | Sicht über beide |: |
 | `naehrstoffe` | 138 Nährstoffe mit Einheit und Gruppe | BLS |
 
 Der Open-Food-Facts-Export ist rund 1,5 GB groß und hat gut vier Millionen
@@ -177,7 +177,7 @@ Excel-Dateien des BLS neu (ohne weitere Python-Pakete).
 Der Code steht unter der [MIT-Lizenz](LICENSE).
 
 Die Nährwertdaten stammen aus dem Bundeslebensmittelschlüssel:
-**Max Rubner-Institut (2025): Bundeslebensmittelschlüssel (BLS), Version 4.0 –
+**Max Rubner-Institut (2025): Bundeslebensmittelschlüssel (BLS), Version 4.0:
 Deutsche Nährstoffdatenbank. Karlsruhe. DOI:
 [10.25826/Data20251217-134202-0](https://doi.org/10.25826/Data20251217-134202-0)**,
 veröffentlicht unter [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
