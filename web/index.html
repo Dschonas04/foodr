@@ -971,6 +971,8 @@ async function zeigeSSO() {
     <p class="hinweis klein">Beim Anbieter als Weiterleitung eintragen: <code>${esc(e.rueckweg)}</code>, nach dem Abmelden: <code>${esc(e.abmeldeweg)}</code></p>
     <div class="reihe"><button class="knopf haupt" id="ssospeichern">Speichern</button><button class="knopf" id="ssotest">Verbindung testen</button></div>
     <p class="hinweis klein" id="ssostand" role="status"></p>
+    <h2 style="margin-top:18px">Konten mit Passwort</h2>
+    <p class="hinweis klein">Anmelden mit Benutzername und Passwort, auf derselben Anmeldeseite wie SSO. ${zustand.sso?.konten ? 'Konten sind eingerichtet.' : 'Noch kein Konto; das erste schaltet die Anmeldung ein.'} <a href="/sso/konten">Konten verwalten</a></p>
     ${wer ? `<p class="hinweis klein" style="margin-bottom:0">Angemeldet als ${esc(wer.name || wer.nutzer)} · <a href="/sso/abmelden">Abmelden</a></p>` : ''}`;
   const stand = (t, schlecht) => { const p = $('#ssostand'); p.textContent = t; p.className = schlecht ? 'meldung' : 'hinweis klein'; };
   $('#ssotest').onclick = async () => {

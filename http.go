@@ -104,7 +104,7 @@ func (d *Dienst) geschuetzt(h http.HandlerFunc) http.HandlerFunc {
 // Skripte schicken das Kennwort in X-Foodr, der Browser einen Keks mit einem
 // davon abgeleiteten Merkmal -- nie das Kennwort selbst.
 func (d *Dienst) erlaubt(r *http.Request) bool {
-	if _, ok := d.sso.Wer(r); ok && d.sso.An() {
+	if _, ok := d.sso.Wer(r); ok && d.sso.Geschuetzt() {
 		return true
 	}
 	if gleich(r.Header.Get("X-Foodr"), d.kennwort) {

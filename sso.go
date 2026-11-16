@@ -9,9 +9,14 @@
 // 3.1.3.7 darf die TLS-Prüfung dann die Signaturprüfung ersetzen. Aussteller,
 // Empfänger, Ablauf und Nonce werden trotzdem geprüft.
 //
-// Notausgang: steht <APP>_SSO_AUS=1 in der Umgebung, ist SSO abgeschaltet, auch
-// wenn es in den Einstellungen an ist. Für den Fall, dass man sich mit einer
-// falschen Einstellung ausgesperrt hat.
+// Daneben gibt es eigene Konten mit Benutzername und Passwort, verwaltet unter
+// /sso/konten. Die Anmeldeseite zeigt dann eine Maske für beides: Benutzername
+// und Passwort, darunter den Knopf zum Anbieter. Gesperrt ist die App, sobald
+// SSO an ist oder es mindestens ein Konto gibt.
+//
+// Notausgang: steht <APP>_SSO_AUS=1 in der Umgebung, ist die Sperre ganz aus,
+// SSO und Konten, auch wenn sie in den Einstellungen an sind. Für den Fall,
+// dass man sich ausgesperrt hat.
 package main
 
 import (
@@ -60,7 +65,14 @@ type SSONutzer struct {
 
 type ssoDatei struct {
 	SSOKonfig
-	Schluessel string `json:"schluessel"`
+	Schluessel string     `json:"schluessel"`
+	Konten     []ssoKonto `json:"konten,omitempty"`
+}
+
+// ssoKonto ist ein eigenes Konto mit Passwort. Hash: PBKDF2-HMAC-SHA256.
+type ssoKonto struct {
+	Name string `json:"name"`
+	Hash string `json:"hash"`
 }
 
 // SSO hält Einstellung und Sitzungsschlüssel einer App.
@@ -85,7 +97,12 @@ type SSO struct {
 	mu         sync.RWMutex
 	k          SSOKonfig
 	schluessel []byte
+	konten     []ssoKonto
 	client     *http.Client
+
+	// Fehlversuche je Name und je Name+Adresse, für die Bremse.
+	fehlMu sync.Mutex
+	fehl   map[string][]time.Time
 }
 
 const (
@@ -107,6 +124,7 @@ func NeuesSSO(app, datei, notausVariable string) *SSO {
 		}
 	}
 	s.k = d.SSOKonfig
+	s.konten = d.Konten
 	if b, err := base64.RawURLEncoding.DecodeString(d.Schluessel); err == nil && len(b) >= 32 {
 		s.schluessel = b
 	} else {
@@ -122,7 +140,7 @@ func NeuesSSO(app, datei, notausVariable string) *SSO {
 }
 
 func (s *SSO) sichern() error {
-	d := ssoDatei{SSOKonfig: s.k, Schluessel: base64.RawURLEncoding.EncodeToString(s.schluessel)}
+	d := ssoDatei{SSOKonfig: s.k, Schluessel: base64.RawURLEncoding.EncodeToString(s.schluessel), Konten: s.konten}
 	roh, err := json.MarshalIndent(d, "", "  ")
 	if err != nil {
 		return err
@@ -147,6 +165,24 @@ func (s *SSO) An() bool {
 	return !s.notaus && s.k.Aktiv && s.k.Aussteller != "" && s.k.ClientID != ""
 }
 
+// Geschuetzt sagt, ob die App gerade nur Angemeldete hereinlässt: SSO ist an
+// oder es gibt eigene Konten.
+func (s *SSO) Geschuetzt() bool {
+	if s == nil {
+		return false
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return !s.notaus && ((s.k.Aktiv && s.k.Aussteller != "" && s.k.ClientID != "") || (s.Sperre && len(s.konten) > 0))
+}
+
+// hatKonten: eigene Konten gibt es nur in Apps ohne eigene Kontenverwaltung.
+func (s *SSO) hatKonten() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return !s.notaus && s.Sperre && len(s.konten) > 0
+}
+
 func (s *SSO) konfig() SSOKonfig {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -168,9 +204,15 @@ func (s *SSO) Wege(m *http.ServeMux, einstellen func(http.HandlerFunc) http.Hand
 	m.HandleFunc("GET /sso/abmelden", s.abmelden)
 	m.HandleFunc("POST /sso/abmelden", s.abmelden)
 	m.HandleFunc("GET /api/sso/status", s.status)
+	if s.Sperre {
+		m.HandleFunc("POST /sso/passwort", s.passwortAnmelden)
+		m.HandleFunc("GET /sso/konten", einstellen(s.kontenSeite))
+		m.HandleFunc("POST /sso/konten", einstellen(s.kontoSpeichern))
+		m.HandleFunc("POST /sso/konten/loeschen", einstellen(s.kontoLoeschen))
+	}
 	// Für einen vorgeschalteten nginx (auth_request): 204 = herein, 401 = anmelden.
 	m.HandleFunc("GET /api/sso/pruefen", func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := s.Wer(r); ok || !s.Sperre || !s.An() || (s.Durchlass != nil && s.Durchlass(r)) {
+		if _, ok := s.Wer(r); ok || !s.Sperre || !s.Geschuetzt() || (s.Durchlass != nil && s.Durchlass(r)) {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -187,7 +229,7 @@ func (s *SSO) Schutz(n http.Handler) http.Handler {
 		return n
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !s.Sperre || !s.An() || s.frei(r.URL.Path) {
+		if !s.Sperre || !s.Geschuetzt() || s.frei(r.URL.Path) {
 			n.ServeHTTP(w, r)
 			return
 		}
@@ -227,6 +269,14 @@ func (s *SSO) Wer(r *http.Request) (SSONutzer, bool) {
 	if !s.lesen(r, ssoKeks, &n) || time.Now().Unix() > n.Bis {
 		return SSONutzer{}, false
 	}
+	// Eine Sitzung aus einem eigenen Konto gilt, solange es das Konto mit
+	// demselben Passwort gibt: Löschen oder ein neues Passwort beendet sie.
+	if n.Lokal {
+		if s.kontoStandPasst(n.Nutzer, n.Stand) {
+			return n.SSONutzer, true
+		}
+		return SSONutzer{}, false
+	}
 	// Wechselt der Anbieter, der Client oder die Freigabeliste, gelten alte
 	// Sitzungen nicht mehr.
 	k := s.konfig()
@@ -241,6 +291,8 @@ type ssoSitzung struct {
 	Aussteller string `json:"iss"`
 	ClientID   string `json:"aud"`
 	Bis        int64  `json:"bis"`
+	Lokal      bool   `json:"lokal,omitempty"`
+	Stand      string `json:"stand,omitempty"`
 }
 
 // ---------- Kekse ----------
@@ -550,7 +602,13 @@ func ssoErlaubt(liste string, n SSONutzer) bool {
 }
 
 func (s *SSO) abmelden(w http.ResponseWriter, r *http.Request) {
+	var alt ssoSitzung
+	lokal := s.lesen(r, ssoKeks, &alt) && alt.Lokal
 	ssoLoeschen(w, r, ssoKeks)
+	if lokal && s.Geschuetzt() {
+		http.Redirect(w, r, "/sso/seite?abgemeldet=1", http.StatusFound)
+		return
+	}
 	if !s.An() {
 		http.Redirect(w, r, s.Startseite, http.StatusFound)
 		return
@@ -569,7 +627,11 @@ func (s *SSO) abmelden(w http.ResponseWriter, r *http.Request) {
 
 func (s *SSO) status(w http.ResponseWriter, r *http.Request) {
 	n, ok := s.Wer(r)
-	antwort := map[string]any{"aktiv": s.An(), "notaus": s.notaus, "angemeldet": ok, "anmelden": "/sso/anmelden", "abmelden": "/sso/abmelden"}
+	antwort := map[string]any{"aktiv": s.An(), "notaus": s.notaus, "angemeldet": ok, "anmelden": "/sso/anmelden", "abmelden": "/sso/abmelden",
+		"geschuetzt": s.Geschuetzt(), "konten": s.hatKonten()}
+	if s.Sperre {
+		antwort["kontenSeite"] = "/sso/konten"
+	}
 	if ok {
 		antwort["nutzer"] = n
 	}
@@ -682,7 +744,19 @@ h1{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:600;margi
 .knopf{display:block;width:100%;padding:9px;margin-top:6px;font-size:14px;font-weight:500;text-align:center;text-decoration:none;
 color:#fff;background:var(--accent);border:1px solid var(--accent);border-radius:var(--radius)}
 .knopf:hover{filter:brightness(.92)}.knopf:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.fuss{text-align:center;font-size:12px;color:var(--muted);margin:16px 0 0;overflow-wrap:anywhere}`
+.fuss{text-align:center;font-size:12px;color:var(--muted);margin:16px 0 0;overflow-wrap:anywhere}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+input{display:block;width:100%;padding:8px 10px;margin:0 0 12px;font:inherit;color:var(--text);background:var(--flaeche);
+border:1px solid var(--border);border-radius:var(--radius)}input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+button.knopf{cursor:pointer;font-family:inherit}
+.oder{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:16px 0 10px}
+.oder::before,.oder::after{content:"";flex:1;border-top:1px solid var(--border)}
+.knopf.zweit{background:transparent;color:var(--text);border-color:var(--border)}
+table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:13px}td{padding:6px 0;border-bottom:1px solid var(--border)}
+td:last-child{text-align:right}td form{margin:0}
+.klein{background:none;border:none;color:var(--fehler-text);cursor:pointer;font:inherit;font-size:12px;padding:0}
+h2{font-size:14px;margin:18px 0 8px}.breit{width:400px}
+a{color:var(--accent)}`
 
 type ssoSeitenInhalt struct {
 	Code       int
@@ -692,12 +766,20 @@ type ssoSeitenInhalt struct {
 	Knopf      string
 	Ziel       string
 	Fuss       string
+	// Maske für Benutzername und Passwort; Knopf/Ziel sind dann der Weg zum
+	// Anbieter und nur da, wenn Knopf gesetzt ist.
+	Maske     bool
+	MaskeZiel string
+	Name      string
+	// Roh: fertiges HTML statt Knopf, für die Kontenseite.
+	Roh   string
+	Breit bool
 }
 
 func (s *SSO) seite(w http.ResponseWriter, i ssoSeitenInhalt) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; frame-ancestors 'none'")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	if i.Code == 0 {
 		i.Code = http.StatusOK
@@ -715,10 +797,30 @@ func (s *SSO) seite(w http.ResponseWriter, i ssoSeitenInhalt) {
 	if i.Fuss != "" {
 		fuss = `<p class="fuss">` + ssoHTML(i.Fuss) + `</p>`
 	}
+	inhalt := ""
+	switch {
+	case i.Roh != "":
+		inhalt = i.Roh
+	case i.Maske:
+		inhalt = `<form method="post" action="/sso/passwort">` +
+			`<input type="hidden" name="ziel" value="` + ssoHTML(i.MaskeZiel) + `">` +
+			`<label for="name">Benutzername</label><input id="name" name="name" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus value="` + ssoHTML(i.Name) + `">` +
+			`<label for="passwort">Passwort</label><input id="passwort" name="passwort" type="password" autocomplete="current-password" required>` +
+			`<button class="knopf" type="submit">Anmelden</button></form>`
+		if i.Knopf != "" {
+			inhalt += `<div class="oder">oder</div><a class="knopf zweit" href="` + ssoHTML(i.Ziel) + `">` + ssoHTML(i.Knopf) + `</a>`
+		}
+	default:
+		inhalt = `<a class="knopf" href="` + ssoHTML(i.Ziel) + `">` + ssoHTML(i.Knopf) + `</a>`
+	}
+	karte := "karte"
+	if i.Breit {
+		karte += " breit"
+	}
 	fmt.Fprintf(w, `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex"><title>%[1]s – Anmelden</title><link rel="icon" href="/favicon.svg"><style>%[2]s</style></head>
-<body><main class="karte"><h1><img src="/favicon.svg" alt="">%[1]s</h1><p class="sub">%[3]s</p>%[4]s<a class="knopf" href="%[5]s">%[6]s</a>%[7]s</main></body></html>`,
-		ssoHTML(s.App), ssoSeitenStil, ssoHTML(i.Unterzeile), meldung, ssoHTML(i.Ziel), ssoHTML(i.Knopf), fuss)
+<body><main class="%[7]s"><h1><img src="/favicon.svg" alt="">%[1]s</h1><p class="sub">%[3]s</p>%[4]s%[5]s%[6]s</main></body></html>`,
+		ssoHTML(s.App), ssoSeitenStil, ssoHTML(i.Unterzeile), meldung, inhalt, fuss, karte)
 }
 
 // anbieterName steht unter dem Knopf, damit klar ist, wohin es geht.
@@ -736,7 +838,7 @@ func ssoAnbieterName(aussteller string) string {
 // anmeldeSeite: GET /sso/seite. Hierher schickt Schutz, wer nicht angemeldet ist.
 func (s *SSO) anmeldeSeite(w http.ResponseWriter, r *http.Request) {
 	ziel := ssoZiel(r.URL.Query().Get("ziel"))
-	if !s.An() {
+	if !s.Geschuetzt() {
 		http.Redirect(w, r, s.Startseite, http.StatusFound)
 		return
 	}
@@ -747,16 +849,26 @@ func (s *SSO) anmeldeSeite(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, ziel, http.StatusFound)
 		return
 	}
-	start := "/sso/anmelden"
-	if ziel != "" {
-		start += "?ziel=" + url.QueryEscape(ziel)
-	}
-	i := ssoSeitenInhalt{Unterzeile: "Melde dich an, um weiterzumachen.", Knopf: "Mit SSO anmelden", Ziel: start,
-		Fuss: ssoAnbieterName(s.konfig().Aussteller)}
+	i := s.anmeldeInhalt(ziel)
 	if r.URL.Query().Has("abgemeldet") {
 		i.Meldung, i.Gut = "Du bist abgemeldet.", true
 	}
 	s.seite(w, i)
+}
+
+// anmeldeInhalt baut die Anmeldeseite: Maske, wenn es Konten gibt, und den
+// Knopf zum Anbieter, wenn SSO an ist.
+func (s *SSO) anmeldeInhalt(ziel string) ssoSeitenInhalt {
+	i := ssoSeitenInhalt{Unterzeile: "Melde dich an, um weiterzumachen.", MaskeZiel: ziel}
+	if s.An() {
+		start := "/sso/anmelden"
+		if ziel != "" {
+			start += "?ziel=" + url.QueryEscape(ziel)
+		}
+		i.Knopf, i.Ziel, i.Fuss = "Mit SSO anmelden", start, ssoAnbieterName(s.konfig().Aussteller)
+	}
+	i.Maske = s.hatKonten()
+	return i
 }
 
 func (s *SSO) fehlerSeite(w http.ResponseWriter, text string) {
@@ -770,6 +882,9 @@ func ssoHTML(s string) string {
 
 // sicheresZiel lässt nur Pfade dieser App zu, keine fremden Adressen.
 func ssoZiel(z string) string {
+	if z == "/sso/konten" {
+		return z
+	}
 	if !strings.HasPrefix(z, "/") || strings.HasPrefix(z, "//") || strings.HasPrefix(z, "/sso/") ||
 		strings.ContainsAny(z, "\\\r\n\t") || len(z) > 2000 {
 		return ""
