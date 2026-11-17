@@ -29,6 +29,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"log"
 	"net/http"
@@ -877,13 +878,16 @@ func (s *SSO) fehlerSeite(w http.ResponseWriter, text string) {
 }
 
 func ssoHTML(s string) string {
-	return strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;").Replace(s)
+	return html.EscapeString(s)
 }
 
 // sicheresZiel lässt nur Pfade dieser App zu, keine fremden Adressen.
 func ssoZiel(z string) string {
 	if z == "/sso/konten" {
 		return z
+	}
+	if len(z) > 1 && (z[1] == '/' || z[1] == '\\') {
+		return ""
 	}
 	if !strings.HasPrefix(z, "/") || strings.HasPrefix(z, "//") || strings.HasPrefix(z, "/sso/") ||
 		strings.ContainsAny(z, "\\\r\n\t") || len(z) > 2000 {
