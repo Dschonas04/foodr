@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - Küchenansicht `/kueche.html` zum Einbetten (Home Assistant): Woche mit Tauschen und Neu-Erfinden je Tag, Rezeptsuche mit Filter und „auf Tag legen“, Planen, Chat, Einkaufsliste; hell und dunkel, fürs Handy.
+- Küchenansicht: Reiter „Lebensmittel“ mit Suche in BLS 4.0 und Open Food Facts samt allen Nährstoffen, Link auf das ganze Foodr; „Neu erfinden“ versucht es bei unbrauchbarer Modellantwort ein zweites Mal.
 - `POST /api/chat`: Gespräch mit dem Modell über Plan, Pool und Vorrat.
 - `POST /api/rezepte/erfinden`: neues Rezept nach Wunsch, auf Wunsch gleich in den Plan.
 - `/kueche?k=…` öffnet die Ansicht mit einem aus dem Kennwort abgeleiteten Schlüssel, der als Kopfzeile nur die Wege der Ansicht öffnet; ohne Kekse, damit es eingebettet auch in Firefox und Safari geht.

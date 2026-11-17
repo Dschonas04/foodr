@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -50,7 +51,9 @@ func (d *Dienst) kuechenSchluesselPasst(r *http.Request) bool {
 func kuechenWeg(r *http.Request) bool {
 	p, m := r.URL.Path, r.Method
 	switch {
-	case m == http.MethodGet && (p == "/api/plan" || p == "/api/rezepte" || p == "/api/regeln"):
+	case m == http.MethodGet && (p == "/api/plan" || p == "/api/rezepte" || p == "/api/regeln" || p == "/api/lebensmittel"):
+		return true
+	case m == http.MethodGet && strings.HasPrefix(p, "/api/lebensmittel/") && !strings.ContainsRune(p[len("/api/lebensmittel/"):], '/'):
 		return true
 	case m == http.MethodPost && (p == "/api/chat" || p == "/api/rezepte/erfinden" || p == "/api/plan/erzeugen"):
 		return true
@@ -255,18 +258,30 @@ func (d *Dienst) rezeptErfinden(w http.ResponseWriter, r *http.Request) {
 
 	ctx, abbruch := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer abbruch()
+	// Zwei Versuche: ab und zu liefert das Modell kein brauchbares JSON.
 	var neu Rezept
-	if err := d.planer.ki.FrageJSON(ctx, erfindAnweisung, auftrag.String(), &neu); err != nil {
-		fehler(w, 502, err.Error())
+	var letzter error
+	for versuch := 1; versuch <= 2; versuch++ {
+		neu = Rezept{}
+		letzter = d.planer.ki.FrageJSON(ctx, erfindAnweisung, auftrag.String(), &neu)
+		if letzter == nil && (strings.TrimSpace(neu.Titel) == "" || len(neu.Zutaten) == 0) {
+			letzter = fmt.Errorf("das Modell hat kein brauchbares Rezept geliefert")
+		}
+		if letzter == nil {
+			break
+		}
+		log.Printf("Rezept erfinden, Versuch %d: %v", versuch, letzter)
+		if ctx.Err() != nil {
+			break
+		}
+	}
+	if letzter != nil {
+		fehler(w, 502, letzter.Error())
 		return
 	}
 	neu.ID = 0
 	neu.Quelle = "Foodr-Assistent"
 	ordne(&neu)
-	if strings.TrimSpace(neu.Titel) == "" || len(neu.Zutaten) == 0 {
-		fehler(w, 422, "das Modell hat kein brauchbares Rezept geliefert")
-		return
-	}
 	gespeichert, err := d.ablage.SpeichereRezept(neu)
 	if err != nil {
 		fehler(w, 500, err.Error())
