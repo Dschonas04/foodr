@@ -135,6 +135,8 @@ Das sind Schätzungen für den Alltag, keine Ernährungsberatung.
 | `POST /api/anmelden` | `{kennwort}` → Sitzungskeks |
 | `GET/POST /api/rezepte`, `GET/PUT/DELETE /api/rezepte/{id}` | Pool |
 | `POST /api/rezepte/einlesen` | Freitext oder Adresse → Rezept (ungespeichert) |
+| `POST /api/rezepte/erfinden` | `{wunsch, tag_id, woche}` → das Modell erfindet ein Rezept, legt es in den Pool und mit `tag_id` gleich in den Plan |
+| `POST /api/chat` | `{verlauf: [{role, content}]}` → `{antwort}`, Gespräch über Plan, Pool und Vorrat |
 | `GET /api/rezepte/{id}/naehrwerte` | Nährwerte gesamt und je Portion, je Zutat mit Zuordnung |
 | `GET /api/plan?woche=YYYY-MM-DD` | Plan einer Woche (Montag) |
 | `POST /api/plan/erzeugen` | `{woche, personen, tage, wuensche, nur_kost, ausschluss}` |
@@ -156,6 +158,22 @@ Das sind Schätzungen für den Alltag, keine Ernährungsberatung.
 | `POST /api/lebensmittel`, `PUT/DELETE /api/lebensmittel/eigen-{n}` | eigene Lebensmittel `{name, marke, gruppe, stueck_g, werte: {CODE: Wert}}` |
 | `GET /api/naehrstoffe` | die 138 Nährstoffe mit Code, Einheit und Gruppe |
 | `GET/PUT /api/zuordnung`, `DELETE /api/zuordnung/{zutat}` | Zuordnungen von Hand `{zutat, lebensmittel, stueck_g}` |
+
+## Küchenansicht und Home Assistant
+
+`/kueche.html` ist Foodr kompakt: Woche mit sofortigem Tauschen oder Neu-Erfinden
+eines Tages, Rezeptsuche, Planen, Chat mit dem Modell und Einkaufsliste. Gedacht
+zum Einbetten, etwa als Webseiten-Dashboard in Home Assistant.
+
+Eine Anmeldeseite lässt sich nicht einbetten. Mit gesetztem `FOODR_KENNWORT`
+öffnet `/kueche?k=SCHLÜSSEL` die Ansicht und setzt den Sitzungskeks; der
+Schlüssel ist HMAC-SHA256 des Kennworts über `foodr-kueche`, als Hex:
+
+```sh
+printf foodr-kueche | openssl dgst -sha256 -hmac "$FOODR_KENNWORT" -r | cut -d' ' -f1
+```
+
+Sensoren in Home Assistant lesen `GET /api/plan` mit der Kopfzeile `X-Foodr`.
 
 ## Entwickeln
 

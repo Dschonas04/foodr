@@ -53,6 +53,10 @@ func (d *Dienst) Wege(web http.Handler) http.Handler {
 	m.HandleFunc("PUT /api/zuordnung", d.geschuetzt(d.zuordnungSetzen))
 	m.HandleFunc("DELETE /api/zuordnung/{zutat}", d.geschuetzt(d.zuordnungLoeschen))
 
+	m.HandleFunc("GET /kueche", d.kuecheOeffnen)
+	m.HandleFunc("POST /api/chat", d.geschuetzt(d.chat))
+	m.HandleFunc("POST /api/rezepte/erfinden", d.geschuetzt(d.rezeptErfinden))
+
 	m.HandleFunc("GET /api/plan", d.geschuetzt(d.plan))
 	m.HandleFunc("POST /api/plan/erzeugen", d.geschuetzt(d.planErzeugen))
 	m.HandleFunc("PUT /api/plan/tag/{id}", d.geschuetzt(d.tagSetzen))

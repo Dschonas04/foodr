@@ -56,8 +56,11 @@ func main() {
 	dienst.sso = NeuesSSO("Foodr", umgebung("FOODR_SSO_DATEI", "./einstellungen/sso.json"), "FOODR_SSO_AUS")
 	dienst.sso.Startseite = "/#/woche"
 	// Skripte mit dem Kennwort der App kommen auch bei SSO durch.
+	// Ebenso der Keks der Kennwort-Anmeldung und der Schluessel, mit dem die
+	// Kuechenansicht (etwa in Home Assistant) einmal geoeffnet wird.
 	dienst.sso.Durchlass = func(r *http.Request) bool {
-		return dienst.kennwort != "" && gleich(r.Header.Get("X-Foodr"), dienst.kennwort)
+		return (dienst.kennwort != "" && gleich(r.Header.Get("X-Foodr"), dienst.kennwort)) ||
+			dienst.keksErlaubt(r) || dienst.kuechenSchluesselPasst(r)
 	}
 	offAdresse := umgebung("FOODR_OFF_ADRESSE", offAdresse)
 	if umgebung("FOODR_OFF", "an") == "an" {

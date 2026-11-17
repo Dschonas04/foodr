@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Foodr Küche</title>
+<link rel="icon" href="/favicon.svg">
+<style>
+:root {
+  --grund: #f6f5f2; --flaeche: #ffffff; --flaeche2: #efede8; --tinte: #2f2d29; --leise: #85827b;
+  --linie: #e4e1da; --akzent: #d9622b; --akzent-hell: #fbe9df; --gut: #2f8f5b; --gut-hell: #e3f3ea;
+  --warn: #c0392b; --schatten: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+  --schrift: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #161615; --flaeche: #21201e; --flaeche2: #2b2a27; --tinte: #ecebe7; --leise: #9d9a93;
+    --linie: #34322e; --akzent: #f08a55; --akzent-hell: rgba(240,138,85,.14); --gut: #5cc48a; --gut-hell: rgba(92,196,138,.14);
+    --warn: #f28b82; --schatten: none; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--grund); color: var(--tinte); font: 15px/1.5 var(--schrift); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.kopf { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--grund) 88%, transparent);
+        backdrop-filter: blur(10px); border-bottom: 1px solid var(--linie); }
+.kopf-innen { max-width: 980px; margin: 0 auto; padding: 12px 16px 0; }
+.kopfzeile { display: flex; align-items: center; gap: 10px; }
+.kopfzeile img { width: 28px; height: 28px; }
+.kopfzeile h1 { font-size: 17px; margin: 0; letter-spacing: -.01em; }
+.kopfzeile .woche { margin-left: auto; display: flex; gap: 4px; background: var(--flaeche2); padding: 3px; border-radius: 999px; }
+.woche button { border: 0; background: transparent; padding: 4px 12px; border-radius: 999px; font-size: 13px; color: var(--leise); }
+.woche button.an { background: var(--flaeche); color: var(--tinte); box-shadow: var(--schatten); }
+.reiter { display: flex; gap: 2px; overflow-x: auto; margin-top: 10px; scrollbar-width: none; }
+.reiter button { border: 0; background: none; padding: 9px 14px 11px; color: var(--leise); font-weight: 500;
+                 border-bottom: 2px solid transparent; white-space: nowrap; display: inline-flex; gap: 7px; align-items: center; }
+.reiter button.an { color: var(--tinte); border-bottom-color: var(--akzent); }
+.reiter svg { width: 17px; height: 17px; }
+
+main { max-width: 980px; margin: 0 auto; padding: 18px 16px 48px; }
+.karte { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 14px; box-shadow: var(--schatten); }
+.leise { color: var(--leise); }
+.klein { font-size: 13px; }
+h2 { font-size: 15px; margin: 0 0 10px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--flaeche2); color: var(--leise); }
+.chip.vegan, .chip.vegetarisch { background: var(--gut-hell); color: var(--gut); }
+.chip.fisch { background: rgba(63,111,168,.14); color: #4a82c4; }
+.chip.fleisch { background: var(--akzent-hell); color: var(--akzent); }
+
+.knopf { border: 1px solid var(--linie); background: var(--flaeche); border-radius: 10px; padding: 7px 12px;
+         display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; }
+.knopf:hover { background: var(--flaeche2); }
+.knopf:disabled { opacity: .55; cursor: default; }
+.knopf.haupt { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.knopf.haupt:hover { filter: brightness(1.05); }
+.knopf.gut { background: var(--gut-hell); border-color: transparent; color: var(--gut); }
+.knopf svg { width: 16px; height: 16px; }
+.symbolknopf { border: 0; background: transparent; width: 34px; height: 34px; border-radius: 9px; display: inline-grid;
+               place-items: center; color: var(--leise); }
+.symbolknopf:hover { background: var(--flaeche2); color: var(--tinte); }
+.symbolknopf svg { width: 18px; height: 18px; }
+
+/* Heute */
+.heute { padding: 20px; display: grid; gap: 12px; margin-bottom: 18px;
+         background: linear-gradient(135deg, var(--akzent-hell), transparent 60%), var(--flaeche); }
+.heute .tagname { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--akzent); }
+.heute .titel { font-size: clamp(22px, 4vw, 30px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin: 0; }
+.heute .hinweis { font-size: 14px; color: var(--leise); margin: 0; }
+.heute .aktionen { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Woche */
+.tage { display: grid; gap: 8px; }
+.tag { padding: 12px 14px; display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; }
+.tag.heute-markiert { border-color: var(--akzent); }
+.tag .datum { text-align: center; line-height: 1.1; }
+.tag .datum b { display: block; font-size: 13px; }
+.tag .datum span { font-size: 20px; font-weight: 700; }
+.tag .name { font-weight: 600; }
+.tag.gekocht .name { text-decoration: line-through; color: var(--leise); }
+.tag .rechts { display: flex; gap: 2px; }
+.details { grid-column: 1 / -1; border-top: 1px solid var(--linie); padding-top: 12px; display: grid; gap: 12px;
+           grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+.details ul, .details ol { margin: 0; padding-left: 18px; }
+.details li { margin: 2px 0; }
+@media (max-width: 640px) { .details { grid-template-columns: 1fr; } .tag { grid-template-columns: 44px 1fr; } .tag .rechts { grid-column: 1 / -1; justify-content: flex-end; } }
+
+.wunsch { grid-column: 1 / -1; display: flex; gap: 8px; }
+.feld { width: 100%; padding: 9px 12px; border: 1px solid var(--linie); border-radius: 10px; background: var(--flaeche); }
+.feld:focus { outline: 2px solid var(--akzent); outline-offset: -1px; }
+.denkt { display: inline-flex; gap: 8px; align-items: center; color: var(--leise); font-size: 13px; }
+.denkt::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--linie);
+                 border-top-color: var(--akzent); animation: dreh 0.8s linear infinite; }
+@keyframes dreh { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .denkt::before { animation: none; } }
+
+/* Rezepte */
+.suche { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.suche .feld { flex: 1; min-width: 200px; }
+.filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.filter button { border: 1px solid var(--linie); background: var(--flaeche); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.filter button.an { background: var(--tinte); color: var(--grund); border-color: var(--tinte); }
+.raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.rezept { padding: 14px; display: grid; gap: 8px; align-content: start; }
+.rezept .name { font-weight: 600; }
+.rezept .unten { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.rezept select { padding: 6px 8px; border-radius: 9px; border: 1px solid var(--linie); background: var(--flaeche); font-size: 13px; }
+.erfinden { margin-top: 18px; padding: 16px; display: grid; gap: 10px; }
+
+/* Planen */
+.planen { padding: 18px; display: grid; gap: 6px; max-width: 640px; }
+.planen label.ueber { font-weight: 600; font-size: 13px; margin-top: 12px; }
+.wahl { display: flex; flex-wrap: wrap; gap: 6px; }
+.wahl label { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--linie); border-radius: 999px; padding: 4px 11px; font-size: 13px; }
+.wahl input { accent-color: var(--akzent); }
+
+@media (max-width: 520px) {
+  .reiter button { padding: 9px 10px 11px; font-size: 14px; gap: 5px; }
+  .reiter svg { display: none; }
+  .kopfzeile .woche button { padding: 4px 9px; }
+}
+
+/* Chat */
+.chat { display: grid; grid-template-rows: 1fr auto; height: calc(100vh - 150px); min-height: 380px; }
+.verlauf { overflow-y: auto; padding: 6px 2px 12px; display: flex; flex-direction: column; gap: 10px; }
+.blase { max-width: 78%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; word-wrap: break-word; }
+.blase.ich { align-self: flex-end; background: var(--akzent); color: #fff; border-bottom-right-radius: 6px; }
+.blase.ki { align-self: flex-start; background: var(--flaeche); border: 1px solid var(--linie); border-bottom-left-radius: 6px; }
+.vorschlaege { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.vorschlaege button { border: 1px solid var(--linie); background: var(--flaeche); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.eingabe { display: flex; gap: 8px; }
+.eingabe textarea { resize: none; height: 44px; }
+
+/* Einkauf */
+.gruppe { margin-bottom: 14px; }
+.gruppe h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--leise); }
+.posten { list-style: none; margin: 0; padding: 0; }
+.posten li { display: flex; gap: 10px; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--linie); }
+.posten li:last-child { border-bottom: 0; }
+.posten input { width: 18px; height: 18px; accent-color: var(--gut); }
+.posten .weg { text-decoration: line-through; color: var(--leise); }
+.posten .menge { margin-left: auto; color: var(--leise); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+.meldung { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--tinte); color: var(--grund);
+           padding: 9px 16px; border-radius: 999px; font-size: 14px; z-index: 20; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.leer { padding: 28px; text-align: center; color: var(--leise); }
+</style>
+</head>
+<body>
+<header class="kopf">
+  <div class="kopf-innen">
+    <div class="kopfzeile">
+      <img src="/favicon.svg" alt="">
+      <h1>Foodr</h1>
+      <div class="woche" role="group" aria-label="Woche">
+        <button data-woche="0" class="an">Diese Woche</button>
+        <button data-woche="7">Nächste</button>
+      </div>
+    </div>
+    <nav class="reiter" role="tablist">
+      <button data-reiter="woche" class="an"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Woche</button>
+      <button data-reiter="rezepte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>Rezepte</button>
+      <button data-reiter="planen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Planen</button>
+      <button data-reiter="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Chat</button>
+      <button data-reiter="einkauf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.5l2.2 11h10.6L20.5 7H7"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></svg>Einkauf</button>
+    </nav>
+  </div>
+</header>
+<main id="inhalt"></main>
+<div class="meldung" id="meldung" role="status" hidden></div>
+
+<script>
+const $ = (s, w = document) => w.querySelector(s);
+const $$ = (s, w = document) => [...w.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const KOST = { vegan: 'vegan', vegetarisch: 'vegetarisch', fisch: 'Fisch', fleisch: 'Fleisch' };
+const WOCHENTAGE = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'];
+const TAGNAME = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const SYM = {
+  tauschen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5"/><path d="M20 4v4.5h-4.5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5"/><path d="M4 20v-4.5h4.5"/></svg>',
+  erfinden: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>',
+  haken: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  auf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  senden: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>',
+};
+
+const zustand = { reiter: 'woche', versatz: 0, plan: null, rezepte: null, offen: new Set(), wunschFuer: null,
+                  arbeitet: new Set(), suche: '', kost: '', chat: lesen('foodr-chat', []), regeln: null };
+
+function lesen(k, v) { try { return JSON.parse(sessionStorage.getItem(k)) ?? v; } catch { return v; } }
+function merken(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* egal */ } }
+
+async function ruf(pfad, methode = 'GET', rumpf) {
+  const r = await fetch(pfad, { method: methode, credentials: 'include',
+    headers: rumpf ? { 'Content-Type': 'application/json' } : {}, body: rumpf ? JSON.stringify(rumpf) : undefined });
+  const text = await r.text();
+  let d; try { d = text ? JSON.parse(text) : null; } catch { d = text; }
+  if (!r.ok) throw new Error((d && (d.fehler || d.error)) || r.statusText);
+  return d;
+}
+
+function melden(text) {
+  const m = $('#meldung'); m.textContent = text; m.hidden = false;
+  clearTimeout(melden.t); melden.t = setTimeout(() => (m.hidden = true), 3500);
+}
+
+function montag(versatz = 0) {
+  const d = new Date(); d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + versatz);
+  return d.toISOString().slice(0, 10);
+}
+const heuteIso = () => { const d = new Date(); d.setHours(12); return d.toISOString().slice(0, 10); };
+const datum = (iso) => new Date(iso + 'T12:00:00');
+
+function chips(r) {
+  if (!r) return '';
+  return `<div class="chips">
+    ${r.dauer_min ? `<span class="chip">${r.dauer_min} min</span>` : ''}
+    ${r.kost ? `<span class="chip ${esc(r.kost)}">${esc(KOST[r.kost] || r.kost)}</span>` : ''}
+    ${r.aufwand ? `<span class="chip">${esc(r.aufwand)}</span>` : ''}
+    ${[...new Set((r.etiketten || []).filter((e) => ![r.aufwand, r.kost, KOST[r.kost]].includes(String(e).toLowerCase()) && e !== KOST[r.kost]))]
+      .slice(0, 3).map((e) => `<span class="chip">${esc(e)}</span>`).join('')}</div>`;
+}
+
+function menge(z) {
+  if (!z.menge) return z.einheit && z.einheit !== 'Prise' ? '' : (z.einheit || '');
+  const m = Number(z.menge); return `${Number.isInteger(m) ? m : m.toFixed(1).replace('.', ',')} ${z.einheit || ''}`.trim();
+}
+
+function details(r) {
+  if (!r) return '';
+  return `<div class="details">
+    <div><h2>Zutaten${r.portionen ? ` <span class="leise klein">für ${r.portionen}</span>` : ''}</h2>
+      <ul>${(r.zutaten || []).map((z) => `<li>${esc(menge(z))} ${esc(z.name)}</li>`).join('')}</ul></div>
+    <div><h2>Zubereitung</h2><ol>${(r.schritte || []).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
+      ${r.hinweise ? `<p class="leise klein">${esc(r.hinweise)}</p>` : ''}</div></div>`;
+}
+
+// ---------------------------------------------------------------- Woche --
+
+async function ladePlan() {
+  zustand.plan = await ruf('/api/plan?woche=' + montag(zustand.versatz)).catch(() => null);
+}
+
+function wunschZeile(tagId) {
+  if (zustand.wunschFuer !== tagId) return '';
+  return `<form class="wunsch" data-wunsch="${tagId}">
+    <input class="feld" name="wunsch" placeholder="Worauf hast du Lust? (leer lassen für eine Überraschung)" autocomplete="off">
+    <button class="knopf haupt">${SYM.erfinden}Erfinden</button></form>`;
+}
+
+function zeigeWoche() {
+  const p = zustand.plan;
+  if (!p || !p.tage?.length) {
+    $('#inhalt').innerHTML = `<div class="karte leer"><p>Für diese Woche gibt es noch keinen Plan.</p>
+      <button class="knopf haupt" data-gehe="planen">${SYM.erfinden}Woche planen</button></div>`;
+    return;
+  }
+  const heute = heuteIso();
+  const tagHeute = p.tage.find((t) => t.tag === heute);
+  const rest = p.tage;
+  let html = '';
+  if (tagHeute) {
+    const r = tagHeute.rezept;
+    const arbeitet = zustand.arbeitet.has(tagHeute.id);
+    html += `<section class="karte heute">
+      <div class="tagname">Heute, ${TAGNAME[datum(heute).getDay()]}</div>
+      <p class="titel">${esc(r ? r.titel : 'Nichts geplant')}</p>
+      ${chips(r)}
+      ${tagHeute.hinweis ? `<p class="hinweis">${esc(tagHeute.hinweis)}</p>` : ''}
+      <div class="aktionen">
+        <button class="knopf ${tagHeute.gekocht ? 'gut' : ''}" data-gekocht="${tagHeute.id}" data-wert="${!tagHeute.gekocht}">${SYM.haken}${tagHeute.gekocht ? 'Gekocht' : 'Als gekocht markieren'}</button>
+        <button class="knopf" data-tauschen="${tagHeute.id}" ${arbeitet ? 'disabled' : ''}>${SYM.tauschen}Anderes Gericht</button>
+        <button class="knopf" data-erfinden="${tagHeute.id}" ${arbeitet ? 'disabled' : ''}>${SYM.erfinden}Neu erfinden</button>
+        ${r ? `<button class="knopf" data-auf="${tagHeute.id}">${SYM.auf}Rezept</button>` : ''}
+        ${arbeitet ? '<span class="denkt">gemma4 kocht etwas aus …</span>' : ''}
+      </div>
+      ${wunschZeile(tagHeute.id)}
+      ${zustand.offen.has(tagHeute.id) ? details(r) : ''}
+    </section>`;
+  }
+  html += `<div class="tage">${rest.map((t) => {
+    const r = t.rezept; const d = datum(t.tag); const arbeitet = zustand.arbeitet.has(t.id);
+    return `<article class="karte tag ${t.gekocht ? 'gekocht' : ''} ${t.tag === heute ? 'heute-markiert' : ''}">
+      <div class="datum"><b>${KURZ[d.getDay()]}</b><span>${d.getDate()}</span></div>
+      <div><div class="name">${esc(r ? r.titel : 'nichts geplant')}</div>${chips(r)}
+        ${arbeitet ? '<span class="denkt">wird ausgetauscht …</span>' : ''}</div>
+      <div class="rechts">
+        <button class="symbolknopf" title="Anderes Gericht aus dem Pool" aria-label="Anderes Gericht" data-tauschen="${t.id}" ${arbeitet ? 'disabled' : ''}>${SYM.tauschen}</button>
+        <button class="symbolknopf" title="Neues Gericht erfinden lassen" aria-label="Neu erfinden" data-erfinden="${t.id}" ${arbeitet ? 'disabled' : ''}>${SYM.erfinden}</button>
+        <button class="symbolknopf" title="${t.gekocht ? 'Nicht gekocht' : 'Gekocht'}" aria-label="Gekocht" data-gekocht="${t.id}" data-wert="${!t.gekocht}">${SYM.haken}</button>
+        ${r ? `<button class="symbolknopf" title="Rezept zeigen" aria-label="Rezept zeigen" data-auf="${t.id}">${SYM.auf}</button>` : ''}
+      </div>
+      ${wunschZeile(t.id)}
+      ${zustand.offen.has(t.id) ? details(r) : ''}
+    </article>`;
+  }).join('')}</div>
+  ${p.begruendung ? `<p class="leise klein" style="margin-top:14px">${esc(p.begruendung)}</p>` : ''}`;
+  $('#inhalt').innerHTML = html;
+}
+
+async function tauschen(id) {
+  zustand.arbeitet.add(id); zeige();
+  try {
+    zustand.plan = await ruf(`/api/plan/tag/${id}/tauschen`, 'POST', { woche: zustand.plan.woche });
+    melden('Ausgetauscht.');
+  } catch (f) {
+    melden(/kein anderes/.test(f.message) ? 'Im Pool ist nichts mehr übrig. Lass ein neues Gericht erfinden.' : 'Tauschen ging nicht: ' + f.message);
+    if (/kein anderes/.test(f.message)) zustand.wunschFuer = id;
+  } finally { zustand.arbeitet.delete(id); zeige(); }
+}
+
+async function erfinden(id, wunsch) {
+  zustand.wunschFuer = null; zustand.arbeitet.add(id); zeige();
+  try {
+    const raus = await ruf('/api/rezepte/erfinden', 'POST', { wunsch, tag_id: id, woche: zustand.plan.woche });
+    if (raus.plan) zustand.plan = raus.plan;
+    zustand.rezepte = null;
+    melden(`Neu im Plan: ${raus.rezept.titel}`);
+  } catch (f) { melden('Erfinden ging nicht: ' + f.message); }
+  finally { zustand.arbeitet.delete(id); zeige(); }
+}
+
+async function gekocht(id, wert) {
+  zustand.plan = await ruf(`/api/plan/tag/${id}/gekocht`, 'POST', { gekocht: wert, woche: zustand.plan.woche }).catch((f) => (melden(f.message), zustand.plan));
+  zeige();
+}
+
+// -------------------------------------------------------------- Rezepte --
+
+async function ladeRezepte() { if (!zustand.rezepte) zustand.rezepte = await ruf('/api/rezepte').catch(() => []); }
+
+function passt(r) {
+  if (zustand.kost && r.kost !== zustand.kost) return false;
+  const q = zustand.suche.trim().toLowerCase();
+  if (!q) return true;
+  const heu = [r.titel, r.beschreibung, ...(r.etiketten || []), ...(r.zutaten || []).map((z) => z.name)].join(' ').toLowerCase();
+  return q.split(/\s+/).every((w) => heu.includes(w));
+}
+
+function tagAuswahl(rid) {
+  const p = zustand.plan;
+  if (!p?.tage?.length) return '';
+  return `<select data-legen="${rid}" aria-label="Auf einen Tag legen"><option value="">Auf Tag legen …</option>
+    ${p.tage.map((t) => { const d = datum(t.tag); return `<option value="${t.id}">${TAGNAME[d.getDay()]} ${d.getDate()}.</option>`; }).join('')}</select>`;
+}
+
+function zeigeRezepte() {
+  const liste = (zustand.rezepte || []).filter(passt);
+  const fokus = document.activeElement?.id === 'suchfeld';
+  $('#inhalt').innerHTML = `
+    <div class="suche"><input id="suchfeld" class="feld" type="search" placeholder="Suchen nach Gericht, Zutat oder Stichwort" value="${esc(zustand.suche)}"></div>
+    <div class="filter">${['', ...Object.keys(KOST)].map((k) => `<button data-kost="${k}" class="${zustand.kost === k ? 'an' : ''}">${k ? KOST[k] : 'Alle'}</button>`).join('')}
+      <span class="leise klein" style="align-self:center;margin-left:6px">${liste.length} von ${(zustand.rezepte || []).length}</span></div>
+    ${liste.length ? `<div class="raster">${liste.map((r) => `<article class="karte rezept">
+        <div class="name">${esc(r.titel)}</div>${chips(r)}
+        ${r.beschreibung ? `<div class="leise klein">${esc(r.beschreibung)}</div>` : ''}
+        <div class="unten">${tagAuswahl(r.id)}<button class="symbolknopf" title="Rezept zeigen" aria-label="Rezept zeigen" data-rauf="${r.id}">${SYM.auf}</button></div>
+        ${zustand.offen.has('r' + r.id) ? details(r) : ''}</article>`).join('')}</div>`
+    : `<div class="karte leer">Nichts gefunden.</div>`}
+    <section class="karte erfinden">
+      <h2 style="margin:0">Nichts dabei?</h2>
+      <p class="leise klein" style="margin:0">gemma4 erfindet ein neues Rezept nach deinem Wunsch und legt es in den Pool.</p>
+      <form class="wunsch" id="neuesRezept"><input class="feld" name="wunsch" placeholder="z. B. etwas mit Kürbis, schnell, vegetarisch" value="${esc(zustand.suche)}" autocomplete="off">
+        <button class="knopf haupt">${SYM.erfinden}Erfinden</button></form>
+      <div id="erfindStand"></div>
+    </section>`;
+  if (fokus) { const f = $('#suchfeld'); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+}
+
+// --------------------------------------------------------------- Planen --
+
+async function zeigePlanen() {
+  if (!zustand.regeln) zustand.regeln = await ruf('/api/regeln').catch(() => ({}));
+  const rg = zustand.regeln || {};
+  const tage = (rg.tage || WOCHENTAGE.join(',')).toLowerCase().split(',');
+  const kost = (rg.nur_kost || '').split(',').filter(Boolean);
+  const woche = montag(zustand.versatz);
+  $('#inhalt').innerHTML = `<section class="karte planen">
+    <div><h2 style="margin:0 0 4px">Woche ab ${datum(woche).toLocaleDateString('de-DE')} planen</h2>
+      <p class="leise klein" style="margin:0">gemma4 wählt die Gerichte aus dem Pool. Ein vorhandener Plan dieser Woche wird ersetzt.</p></div>
+    <label class="ueber" for="personen">Personen</label>
+    <input class="feld" id="personen" type="number" min="1" max="12" value="${Number(rg.personen) || 2}" style="max-width:120px">
+    <label class="ueber">An diesen Tagen</label>
+    <div class="wahl">${WOCHENTAGE.map((t) => `<label><input type="checkbox" data-ptag="${t}" ${tage.includes(t) ? 'checked' : ''}>${t[0].toUpperCase() + t.slice(1, 2)}</label>`).join('')}</div>
+    <label class="ueber">Nur diese Kost (nichts gewählt heißt alles)</label>
+    <div class="wahl">${Object.entries(KOST).map(([k, n]) => `<label><input type="checkbox" data-pkost="${k}" ${kost.includes(k) ? 'checked' : ''}>${n}</label>`).join('')}</div>
+    <label class="ueber" for="wuensche">Wünsche</label>
+    <textarea class="feld" id="wuensche" rows="3" placeholder="z. B. mehr Gemüse, Donnerstag Fisch, nichts Scharfes">${esc(rg.wuensche || '')}</textarea>
+    <div style="display:flex;gap:10px;align-items:center"><button class="knopf haupt" id="planErzeugen">${SYM.erfinden}Plan erzeugen</button><span id="planStand"></span></div>
+  </section>`;
+}
+
+async function planErzeugen(knopf) {
+  knopf.disabled = true;
+  $('#planStand').innerHTML = '<span class="denkt">gemma4 stellt die Woche zusammen …</span>';
+  try {
+    const raus = await ruf('/api/plan/erzeugen', 'POST', {
+      woche: montag(zustand.versatz), personen: Number($('#personen').value) || 2, wuensche: $('#wuensche').value,
+      tage: $$('[data-ptag]:checked').map((k) => k.dataset.ptag), nur_kost: $$('[data-pkost]:checked').map((k) => k.dataset.pkost),
+    });
+    zustand.plan = raus.plan; zustand.regeln = null;
+    melden(raus.meldung || 'Plan steht.');
+    wechsle('woche');
+  } catch (f) { $('#planStand').textContent = 'Ging nicht: ' + f.message; knopf.disabled = false; }
+}
+
+// ----------------------------------------------------------------- Chat --
+
+function zeigeChat() {
+  const v = zustand.chat;
+  $('#inhalt').innerHTML = `<section class="chat">
+    <div class="verlauf" id="verlauf">${v.length ? v.map((n) => `<div class="blase ${n.role === 'user' ? 'ich' : 'ki'}">${esc(n.content)}</div>`).join('')
+      : '<div class="leer">Frag nach dem Plan, nach Resten im Kühlschrank, nach Ersatz für eine Zutat oder wie ein Gericht geht.</div>'}
+      ${zustand.chatLaeuft ? '<div class="blase ki"><span class="denkt">denkt nach …</span></div>' : ''}</div>
+    <div>
+      <div class="vorschlaege">${['Was gibt es heute, und was muss ich vorbereiten?', 'Was kann ich aus Resten kochen?', 'Welches Gericht diese Woche ist am schnellsten?', 'Womit ersetze ich Sahne?']
+        .map((s) => `<button data-frage="${esc(s)}">${esc(s)}</button>`).join('')}
+        ${v.length ? '<button data-neu>Neues Gespräch</button>' : ''}</div>
+      <form class="eingabe" id="chatForm"><textarea class="feld" id="chatFeld" placeholder="Nachricht an den Kochassistenten" rows="1"></textarea>
+        <button class="knopf haupt" ${zustand.chatLaeuft ? 'disabled' : ''} aria-label="Senden">${SYM.senden}</button></form>
+    </div></section>`;
+  const vl = $('#verlauf'); vl.scrollTop = vl.scrollHeight;
+  if (!zustand.chatLaeuft) $('#chatFeld').focus();
+}
+
+async function fragen(text) {
+  text = text.trim(); if (!text || zustand.chatLaeuft) return;
+  zustand.chat.push({ role: 'user', content: text }); merken('foodr-chat', zustand.chat);
+  zustand.chatLaeuft = true; zeige();
+  try {
+    const raus = await ruf('/api/chat', 'POST', { verlauf: zustand.chat });
+    zustand.chat.push({ role: 'assistant', content: raus.antwort });
+  } catch (f) { zustand.chat.push({ role: 'assistant', content: 'Das ging gerade nicht: ' + f.message }); }
+  zustand.chatLaeuft = false; merken('foodr-chat', zustand.chat); zeige();
+}
+
+// -------------------------------------------------------------- Einkauf --
+
+async function zeigeEinkauf() {
+  const p = zustand.plan;
+  if (!p?.id) { $('#inhalt').innerHTML = '<div class="karte leer">Ohne Plan gibt es keine Einkaufsliste.</div>'; return; }
+  const posten = await ruf(`/api/plan/${p.id}/einkauf`).catch(() => []);
+  const gruppen = {};
+  for (const x of posten) (gruppen[x.kategorie || 'Sonstiges'] ||= []).push(x);
+  const offen = posten.filter((x) => !x.abgehakt).length;
+  $('#inhalt').innerHTML = `<p class="leise klein" style="margin:0 0 12px">${offen} von ${posten.length} noch offen</p>
+    ${Object.entries(gruppen).map(([k, l]) => `<section class="gruppe"><h2>${esc(k)}</h2><ul class="karte posten">
+      ${l.map((x) => `<li><input type="checkbox" data-posten="${x.id}" ${x.abgehakt ? 'checked' : ''} id="p${x.id}">
+        <label for="p${x.id}" class="${x.abgehakt ? 'weg' : ''}">${esc(x.name)}</label><span class="menge">${esc(menge(x))}</span></li>`).join('')}
+    </ul></section>`).join('') || '<div class="karte leer">Die Liste ist leer.</div>'}`;
+}
+
+// ------------------------------------------------------------- Rahmen --
+
+async function zeige() {
+  if (zustand.reiter === 'woche') zeigeWoche();
+  else if (zustand.reiter === 'rezepte') { await ladeRezepte(); zeigeRezepte(); }
+  else if (zustand.reiter === 'planen') await zeigePlanen();
+  else if (zustand.reiter === 'chat') zeigeChat();
+  else if (zustand.reiter === 'einkauf') await zeigeEinkauf();
+}
+
+function wechsle(r) {
+  zustand.reiter = r;
+  $$('[data-reiter]').forEach((b) => b.classList.toggle('an', b.dataset.reiter === r));
+  try { localStorage.setItem('foodr-kueche-reiter', r); } catch { /* egal */ }
+  zeige();
+}
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.reiter) return wechsle(b.dataset.reiter);
+  if (b.dataset.gehe) return wechsle(b.dataset.gehe);
+  if (b.dataset.woche !== undefined) {
+    zustand.versatz = Number(b.dataset.woche);
+    $$('[data-woche]').forEach((x) => x.classList.toggle('an', x === b));
+    await ladePlan(); return zeige();
+  }
+  if (b.dataset.tauschen) return tauschen(Number(b.dataset.tauschen));
+  if (b.dataset.erfinden) { const id = Number(b.dataset.erfinden); zustand.wunschFuer = zustand.wunschFuer === id ? null : id; zeige(); $(`[data-wunsch="${id}"] input`)?.focus(); return; }
+  if (b.dataset.gekocht) return gekocht(Number(b.dataset.gekocht), b.dataset.wert === 'true');
+  if (b.dataset.auf) { const id = Number(b.dataset.auf); zustand.offen.has(id) ? zustand.offen.delete(id) : zustand.offen.add(id); return zeige(); }
+  if (b.dataset.rauf) { const id = 'r' + b.dataset.rauf; zustand.offen.has(id) ? zustand.offen.delete(id) : zustand.offen.add(id); return zeige(); }
+  if (b.dataset.kost !== undefined) { zustand.kost = b.dataset.kost; return zeigeRezepte(); }
+  if (b.id === 'planErzeugen') return planErzeugen(b);
+  if (b.dataset.frage) return fragen(b.dataset.frage);
+  if (b.dataset.neu !== undefined) { zustand.chat = []; merken('foodr-chat', []); return zeige(); }
+});
+
+document.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.dataset.wunsch) return erfinden(Number(f.dataset.wunsch), f.wunsch.value);
+  if (f.id === 'chatForm') { const t = $('#chatFeld').value; return fragen(t); }
+  if (f.id === 'neuesRezept') {
+    const knopf = $('button', f); knopf.disabled = true;
+    $('#erfindStand').innerHTML = '<span class="denkt">gemma4 entwickelt ein Rezept …</span>';
+    try {
+      const raus = await ruf('/api/rezepte/erfinden', 'POST', { wunsch: f.wunsch.value });
+      zustand.rezepte = null; zustand.suche = ''; await ladeRezepte();
+      zustand.offen.add('r' + raus.rezept.id);
+      melden(`Neu im Pool: ${raus.rezept.titel}`);
+      zeigeRezepte();
+    } catch (x) { $('#erfindStand').textContent = 'Ging nicht: ' + x.message; knopf.disabled = false; }
+  }
+});
+
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'suchfeld') { zustand.suche = e.target.value; zeigeRezepte(); }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.id === 'chatFeld' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fragen(e.target.value); }
+});
+
+document.addEventListener('change', async (e) => {
+  const s = e.target;
+  if (s.dataset.legen && s.value) {
+    zustand.plan = await ruf(`/api/plan/tag/${s.value}`, 'PUT', { rezept_id: Number(s.dataset.legen), hinweis: '', woche: zustand.plan.woche })
+      .catch((f) => (melden(f.message), zustand.plan));
+    melden('Liegt im Plan.'); zeigeRezepte();
+  }
+  if (s.dataset.posten) {
+    await ruf(`/api/einkauf/${s.dataset.posten}`, 'PATCH', { abgehakt: s.checked }).catch((f) => melden(f.message));
+    s.nextElementSibling.classList.toggle('weg', s.checked);
+  }
+});
+
+(async () => {
+  try { zustand.reiter = localStorage.getItem('foodr-kueche-reiter') || 'woche'; } catch { /* egal */ }
+  $$('[data-reiter]').forEach((b) => b.classList.toggle('an', b.dataset.reiter === zustand.reiter));
+  await ladePlan();
+  zeige();
+  // Was andere (Handy, Rechner) am Plan ändern, kommt ohne Neuladen an.
+  setInterval(async () => {
+    if (document.hidden || zustand.arbeitet.size || zustand.reiter !== 'woche') return;
+    await ladePlan(); zeigeWoche();
+  }, 60000);
+})();
+</script>
+</body>
+</html>

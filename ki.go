@@ -90,6 +90,42 @@ func (k *KI) FrageJSON(ctx context.Context, anweisung, auftrag string, ziel any)
 	return nil
 }
 
+// Fragt das Modell mit einem ganzen Gespraech und gibt den Text zurueck.
+func (k *KI) FrageText(ctx context.Context, nachrichten []nachricht) (string, error) {
+	rumpf, _ := json.Marshal(chatAnfrage{
+		Modell:      k.Modell,
+		Nachrichten: nachrichten,
+		Strom:       false,
+		KeepAlive:   "15m",
+		Optionen:    map[string]any{"temperature": 0.6, "num_ctx": 16384},
+	})
+	anfrage, err := http.NewRequestWithContext(ctx, http.MethodPost, k.Adresse+"/api/chat", bytes.NewReader(rumpf))
+	if err != nil {
+		return "", err
+	}
+	anfrage.Header.Set("Content-Type", "application/json")
+	antwort, err := k.Klient.Do(anfrage)
+	if err != nil {
+		return "", fmt.Errorf("Ollama nicht erreichbar: %w", err)
+	}
+	defer antwort.Body.Close()
+	daten, err := io.ReadAll(antwort.Body)
+	if err != nil {
+		return "", err
+	}
+	if antwort.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("Ollama antwortet %d: %s", antwort.StatusCode, kurz(string(daten)))
+	}
+	var a chatAntwort
+	if err := json.Unmarshal(daten, &a); err != nil {
+		return "", fmt.Errorf("Antwort unlesbar: %w", err)
+	}
+	if a.Fehler != "" {
+		return "", fmt.Errorf("Ollama: %s", a.Fehler)
+	}
+	return strings.TrimSpace(a.Nachricht.Inhalt), nil
+}
+
 // Manche Modelle legen das JSON in einen Codeblock oder schreiben davor.
 func schaeleJSON(s string) string {
 	s = strings.TrimSpace(s)
