@@ -32,7 +32,7 @@ Regeln:
   ist, was eingefroren werden kann, was zu Resten passt. Wenn es nichts zu
   sagen gibt, bleibt er leer. Einzelne Woerter wie "zubereiten" sind kein
   Hinweis.
-- Deutsche Umlaute ausschreiben, keine Emojis.`
+- Echte deutsche Umlaute und ß verwenden (ä, ö, ü, ß), niemals ae, oe, ue oder ss als Ersatz. Keine Emojis.`
 
 type kiPlan struct {
 	Tage []struct {

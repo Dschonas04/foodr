@@ -36,7 +36,7 @@ Regeln:
 - saison nur setzen, wenn das Gericht wirklich saisonal ist, sonst leer lassen.
 - Nichts erfinden, was nicht im Text steht; fehlende Angaben schaetzen und in
   hinweise vermerken.
-- Deutsche Umlaute ausschreiben, keine Emojis.`
+- Echte deutsche Umlaute und ß verwenden (ä, ö, ü, ß), niemals ae, oe, ue oder ss als Ersatz. Keine Emojis.`
 
 func (p *Planer) Einlesen(ctx context.Context, text, quelle string) (Rezept, error) {
 	var r Rezept

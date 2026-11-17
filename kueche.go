@@ -84,105 +84,6 @@ func (d *Dienst) kuecheOeffnen(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, ziel, http.StatusFound)
 }
 
-// ---------- Gespraech ----------
-
-const chatAnweisung = `Du bist der Kochassistent von Foodr, einem Essensplaner fuer einen Haushalt.
-Antworte auf Deutsch, knapp und praktisch, mit echten Umlauten, ohne Emojis.
-Du kennst den Wochenplan, die Rezepte im Pool, den Vorrat und die Planungsregeln (unten).
-Wenn jemand fragt, was es gibt, was er einkaufen soll, was er aus Resten kochen kann,
-wie ein Gericht geht oder womit er etwas ersetzen kann, antworte aus diesen Daten.
-Wenn ein Gericht nicht passt, schlage ein anderes aus dem Pool vor und nenne den Titel genau.
-Erfinde keine Dinge ueber den Plan, die nicht unten stehen.`
-
-func (d *Dienst) chatKontext() string {
-	var b strings.Builder
-	jetzt := time.Now()
-	fmt.Fprintf(&b, "Heute ist %s, %s.\n\n", wochentagName(jetzt), jetzt.Format("02.01.2006"))
-	if p, err := d.ablage.PlanDerWoche(MontagDerWoche(jetzt)); err == nil && p != nil {
-		b.WriteString("Wochenplan:\n")
-		for _, t := range p.Tage {
-			titel := "nichts geplant"
-			if t.Rezept != nil {
-				titel = t.Rezept.Titel
-			}
-			gekocht := ""
-			if t.Gekocht {
-				gekocht = " (gekocht)"
-			}
-			tt, _ := time.Parse("2006-01-02", t.Tag)
-			fmt.Fprintf(&b, "- %s %s: %s%s\n", wochentagName(tt), tt.Format("02.01."), titel, gekocht)
-			if t.Rezept != nil {
-				var z []string
-				for _, zu := range t.Rezept.Zutaten {
-					z = append(z, zu.Name)
-				}
-				fmt.Fprintf(&b, "  Zutaten: %s\n", strings.Join(z, ", "))
-				if len(t.Rezept.Schritte) > 0 {
-					fmt.Fprintf(&b, "  Zubereitung: %s\n", strings.Join(t.Rezept.Schritte, " "))
-				}
-			}
-		}
-		b.WriteString("\n")
-	}
-	if rez, err := d.ablage.Rezepte(); err == nil {
-		b.WriteString("Rezepte im Pool:\n")
-		for _, r := range rez {
-			fmt.Fprintf(&b, "- %s (%s, %d min, %s)\n", r.Titel, r.Kost, r.DauerMin, r.Aufwand)
-		}
-		b.WriteString("\n")
-	}
-	if v, err := d.ablage.Vorrat(); err == nil && len(v) > 0 {
-		fmt.Fprintf(&b, "Immer im Vorrat: %s\n", strings.Join(v, ", "))
-	}
-	if r, err := d.ablage.Regeln(); err == nil {
-		if r["wuensche"] != "" {
-			fmt.Fprintf(&b, "Wuensche fuer die Planung: %s\n", r["wuensche"])
-		}
-		if r["personen"] != "" {
-			fmt.Fprintf(&b, "Personen: %s\n", r["personen"])
-		}
-	}
-	return b.String()
-}
-
-func wochentagName(t time.Time) string {
-	return [...]string{"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"}[t.Weekday()]
-}
-
-func (d *Dienst) chat(w http.ResponseWriter, r *http.Request) {
-	var rumpf struct {
-		Verlauf []nachricht `json:"verlauf"`
-	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&rumpf); err != nil || len(rumpf.Verlauf) == 0 {
-		fehler(w, 400, "unlesbar")
-		return
-	}
-	// Nur die letzten Wortwechsel, und nur Nutzer und Assistent: eine Rolle
-	// "system" aus dem Browser wuerde die Anweisung ueberschreiben.
-	verlauf := rumpf.Verlauf
-	if len(verlauf) > 16 {
-		verlauf = verlauf[len(verlauf)-16:]
-	}
-	nachrichten := []nachricht{{Rolle: "system", Inhalt: chatAnweisung + "\n\n" + d.chatKontext()}}
-	for _, n := range verlauf {
-		if n.Rolle != "user" && n.Rolle != "assistant" {
-			continue
-		}
-		if len(n.Inhalt) > 4000 {
-			n.Inhalt = n.Inhalt[:4000]
-		}
-		nachrichten = append(nachrichten, n)
-	}
-	ctx, abbruch := context.WithTimeout(r.Context(), 4*time.Minute)
-	defer abbruch()
-	antwort, err := d.planer.ki.FrageText(ctx, nachrichten)
-	if err != nil {
-		fehler(w, 502, err.Error())
-		return
-	}
-	gib(w, map[string]any{"antwort": antwort})
-}
-
 // ---------- Neues Rezept auf Zuruf ----------
 
 const erfindAnweisung = `Du entwickelst ein neues Rezept fuer einen Haushalt.
@@ -200,7 +101,7 @@ Regeln:
 - kategorie ist eine von: Obst und Gemüse, Fleisch und Fisch, Molkerei und Eier, Kühlregal, Trocken und Vorrat, Gewürze, Tiefkühl, Brot und Backwaren, Getränke, Sonstiges.
 - Zutaten einzeln, keine Mengen im Namen. 4 bis 8 kurze Schritte.
 - Das Gericht darf keines der genannten vorhandenen Rezepte sein.
-- Deutsche Umlaute ausschreiben, keine Emojis.`
+- Echte deutsche Umlaute und ß verwenden (ä, ö, ü, ß), niemals ae, oe, ue oder ss als Ersatz. Keine Emojis.`
 
 func (d *Dienst) rezeptErfinden(w http.ResponseWriter, r *http.Request) {
 	var rumpf struct {
@@ -212,23 +113,39 @@ func (d *Dienst) rezeptErfinden(w http.ResponseWriter, r *http.Request) {
 		fehler(w, 400, "unlesbar")
 		return
 	}
+	ctx, abbruch := context.WithTimeout(r.Context(), 5*time.Minute)
+	defer abbruch()
+	rez, plan, err := d.erfinde(ctx, rumpf.Wunsch, rumpf.TagID, rumpf.Woche)
+	if err != nil {
+		fehler(w, 502, err.Error())
+		return
+	}
+	antwort := map[string]any{"rezept": rez}
+	if plan != nil {
+		antwort["plan"] = plan
+	}
+	gib(w, antwort)
+}
+
+// erfinde laesst das Modell ein Rezept schreiben, legt es in den Pool und mit
+// tagID gleich in den Plan der Woche.
+func (d *Dienst) erfinde(ctx context.Context, wunsch string, tagID int, woche string) (Rezept, *Plan, error) {
 	var auftrag strings.Builder
-	wunsch := strings.TrimSpace(rumpf.Wunsch)
+	wunsch = strings.TrimSpace(wunsch)
 	if wunsch == "" {
 		wunsch = "etwas Abwechslungsreiches, das zur Jahreszeit passt"
 	}
 	if len(wunsch) > 500 {
 		wunsch = wunsch[:500]
 	}
+	if woche == "" {
+		woche = MontagDerWoche(time.Now())
+	}
 	fmt.Fprintf(&auftrag, "Wunsch: %s\n", wunsch)
-	if rumpf.TagID != 0 {
-		woche := rumpf.Woche
-		if woche == "" {
-			woche = MontagDerWoche(time.Now())
-		}
+	if tagID != 0 {
 		if p, err := d.ablage.PlanDerWoche(woche); err == nil && p != nil {
 			for _, t := range p.Tage {
-				if t.ID == rumpf.TagID {
+				if t.ID == tagID {
 					tt, _ := time.Parse("2006-01-02", t.Tag)
 					fmt.Fprintf(&auftrag, "Gekocht wird am %s", wochentagName(tt))
 					if werktag(t.Tag) {
@@ -245,19 +162,35 @@ func (d *Dienst) rezeptErfinden(w http.ResponseWriter, r *http.Request) {
 	if regeln, err := d.ablage.Regeln(); err == nil && regeln["personen"] != "" {
 		fmt.Fprintf(&auftrag, "Personen: %s\n", regeln["personen"])
 	}
+	vorhanden := map[string]bool{}
 	if rez, err := d.ablage.Rezepte(); err == nil && len(rez) > 0 {
 		var t []string
 		for _, x := range rez {
 			t = append(t, x.Titel)
+			vorhanden[strings.ToLower(strings.TrimSpace(x.Titel))] = true
 		}
-		fmt.Fprintf(&auftrag, "Vorhandene Rezepte: %s\n", strings.Join(t, "; "))
+		// Bei vielen Rezepten nur die Titel, die dem Wunsch nahe sind, sonst
+		// fuellt die Liste den Kontext.
+		if len(t) > 120 {
+			var nah []string
+			for _, x := range t {
+				for _, w := range strings.Fields(strings.ToLower(wunsch)) {
+					if len(w) > 3 && strings.Contains(strings.ToLower(x), w) {
+						nah = append(nah, x)
+						break
+					}
+				}
+			}
+			t = nah
+		}
+		if len(t) > 0 {
+			fmt.Fprintf(&auftrag, "Vorhandene Rezepte (nicht wiederholen): %s\n", strings.Join(t, "; "))
+		}
 	}
 	if v, err := d.ablage.Vorrat(); err == nil && len(v) > 0 {
 		fmt.Fprintf(&auftrag, "Im Vorrat: %s\n", strings.Join(v, ", "))
 	}
 
-	ctx, abbruch := context.WithTimeout(r.Context(), 5*time.Minute)
-	defer abbruch()
 	// Zwei Versuche: ab und zu liefert das Modell kein brauchbares JSON.
 	var neu Rezept
 	var letzter error
@@ -276,32 +209,28 @@ func (d *Dienst) rezeptErfinden(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if letzter != nil {
-		fehler(w, 502, letzter.Error())
-		return
+		return Rezept{}, nil, letzter
 	}
 	neu.ID = 0
 	neu.Quelle = "Foodr-Assistent"
 	ordne(&neu)
+	if vorhanden[strings.ToLower(strings.TrimSpace(neu.Titel))] {
+		return Rezept{}, nil, fmt.Errorf("„%s“ gibt es schon im Pool", neu.Titel)
+	}
 	gespeichert, err := d.ablage.SpeichereRezept(neu)
 	if err != nil {
-		fehler(w, 500, err.Error())
-		return
+		return Rezept{}, nil, err
 	}
-	antwort := map[string]any{"rezept": gespeichert}
-	if rumpf.TagID != 0 {
-		if err := d.ablage.SetzeTag(rumpf.TagID, gespeichert.ID, gespeichert.Hinweise); err != nil {
-			fehler(w, 500, err.Error())
-			return
-		}
-		woche := rumpf.Woche
-		if woche == "" {
-			woche = MontagDerWoche(time.Now())
-		}
-		if p, err := d.ablage.PlanDerWoche(woche); err == nil && p != nil {
-			_ = d.planer.RechneEinkauf(p)
-			p, _ = d.ablage.PlanDerWoche(woche)
-			antwort["plan"] = p
-		}
+	if tagID == 0 {
+		return gespeichert, nil, nil
 	}
-	gib(w, antwort)
+	if err := d.ablage.SetzeTag(tagID, gespeichert.ID, gespeichert.Hinweise); err != nil {
+		return gespeichert, nil, err
+	}
+	p, err := d.ablage.PlanDerWoche(woche)
+	if err == nil && p != nil {
+		_ = d.planer.RechneEinkauf(p)
+		p, _ = d.ablage.PlanDerWoche(woche)
+	}
+	return gespeichert, p, nil
 }

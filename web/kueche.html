@@ -138,6 +138,10 @@ h2 { font-size: 15px; margin: 0 0 10px; }
 .blase { max-width: 78%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; word-wrap: break-word; }
 .blase.ich { align-self: flex-end; background: var(--akzent); color: #fff; border-bottom-right-radius: 6px; }
 .blase.ki { align-self: flex-start; background: var(--flaeche); border: 1px solid var(--linie); border-bottom-left-radius: 6px; }
+.taten { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.taten span { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border-radius: 999px;
+              background: var(--gut-hell); color: var(--gut); }
+.taten svg { width: 12px; height: 12px; }
 .vorschlaege { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .vorschlaege button { border: 1px solid var(--linie); background: var(--flaeche); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
 .eingabe { display: flex; gap: 8px; }
@@ -463,14 +467,22 @@ async function planErzeugen(knopf) {
 
 // ----------------------------------------------------------------- Chat --
 
+// Das Modell schreibt gern ein wenig Markdown: fett, Listen, Nummern.
+function md(text) {
+  return esc(text)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/^\s*[*-]\s+/gm, '• ')
+    .replace(/^#{1,4}\s+(.+)$/gm, '<b>$1</b>');
+}
+
 function zeigeChat() {
   const v = zustand.chat;
   $('#inhalt').innerHTML = `<section class="chat">
-    <div class="verlauf" id="verlauf">${v.length ? v.map((n) => `<div class="blase ${n.role === 'user' ? 'ich' : 'ki'}">${esc(n.content)}</div>`).join('')
-      : '<div class="leer">Frag nach dem Plan, nach Resten im Kühlschrank, nach Ersatz für eine Zutat oder wie ein Gericht geht.</div>'}
-      ${zustand.chatLaeuft ? '<div class="blase ki"><span class="denkt">denkt nach …</span></div>' : ''}</div>
+    <div class="verlauf" id="verlauf">${v.length ? v.map((n) => `<div class="blase ${n.role === 'user' ? 'ich' : 'ki'}">${n.role === 'user' ? esc(n.content) : md(n.content)}${n.schritte?.length ? `<div class="taten">${n.schritte.map((s) => `<span>${SYM.haken}${esc(s)}</span>`).join('')}</div>` : ''}</div>`).join('')
+      : '<div class="leer">Der Kochassistent kennt Plan, Rezepte, Vorrat und Lebensmitteldatenbank und kann selbst handeln: Gerichte tauschen, neue erfinden, Tage belegen, die Woche planen, die Einkaufsliste ergänzen. Frag einfach.</div>'}
+      ${zustand.chatLaeuft ? '<div class="blase ki"><span class="denkt">gemma4 arbeitet …</span></div>' : ''}</div>
     <div>
-      <div class="vorschlaege">${['Was gibt es heute, und was muss ich vorbereiten?', 'Was kann ich aus Resten kochen?', 'Welches Gericht diese Woche ist am schnellsten?', 'Womit ersetze ich Sahne?']
+      <div class="vorschlaege">${['Was gibt es heute, und was muss ich vorbereiten?', 'Tausch morgen gegen etwas Vegetarisches', 'Ich habe Zucchini und Feta übrig, was kann ich kochen?', 'Plan die nächste Woche mit viel Gemüse', 'Wie viel Eiweiß hat Skyr?', 'Setz Kaffee auf die Einkaufsliste']
         .map((s) => `<button data-frage="${esc(s)}">${esc(s)}</button>`).join('')}
         ${v.length ? '<button data-neu>Neues Gespräch</button>' : ''}</div>
       <form class="eingabe" id="chatForm"><textarea class="feld" id="chatFeld" placeholder="Nachricht an den Kochassistenten" rows="1"></textarea>
@@ -485,8 +497,9 @@ async function fragen(text) {
   zustand.chat.push({ role: 'user', content: text }); merken('foodr-chat', zustand.chat);
   zustand.chatLaeuft = true; zeige();
   try {
-    const raus = await ruf('/api/chat', 'POST', { verlauf: zustand.chat });
-    zustand.chat.push({ role: 'assistant', content: raus.antwort });
+    const raus = await ruf('/api/chat', 'POST', { verlauf: zustand.chat.map(({ role, content }) => ({ role, content })) });
+    zustand.chat.push({ role: 'assistant', content: raus.antwort, schritte: raus.schritte || [] });
+    if (raus.geaendert) { zustand.rezepte = null; await ladePlan(); }
   } catch (f) { zustand.chat.push({ role: 'assistant', content: 'Das ging gerade nicht: ' + f.message }); }
   zustand.chatLaeuft = false; merken('foodr-chat', zustand.chat); zeige();
 }

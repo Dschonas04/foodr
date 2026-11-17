@@ -136,7 +136,7 @@ Das sind Schätzungen für den Alltag, keine Ernährungsberatung.
 | `GET/POST /api/rezepte`, `GET/PUT/DELETE /api/rezepte/{id}` | Pool |
 | `POST /api/rezepte/einlesen` | Freitext oder Adresse → Rezept (ungespeichert) |
 | `POST /api/rezepte/erfinden` | `{wunsch, tag_id, woche}` → das Modell erfindet ein Rezept, legt es in den Pool und mit `tag_id` gleich in den Plan |
-| `POST /api/chat` | `{verlauf: [{role, content}]}` → `{antwort}`, Gespräch über Plan, Pool und Vorrat |
+| `POST /api/chat` | `{verlauf: [{role, content}]}` → `{antwort, geaendert, schritte}`; der Assistent nutzt Werkzeuge (Plan, Rezepte, Tage belegen/tauschen/erfinden, Einkauf, Vorrat, Nährwerte, Woche planen) |
 | `GET /api/rezepte/{id}/naehrwerte` | Nährwerte gesamt und je Portion, je Zutat mit Zuordnung |
 | `GET /api/plan?woche=YYYY-MM-DD` | Plan einer Woche (Montag) |
 | `POST /api/plan/erzeugen` | `{woche, personen, tage, wuensche, nur_kost, ausschluss}` |
