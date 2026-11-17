@@ -6,9 +6,9 @@ package main
 // Pool nichts Passendes mehr liegt.
 //
 // Einbetten heisst: keine Anmeldeseite im Rahmen (Keycloak laesst sich nicht
-// einbetten). Die Ansicht wird deshalb einmal mit einem Schluessel geoeffnet,
-// /kueche?k=..., der aus dem Kennwort abgeleitet ist; Foodr setzt daraufhin
-// denselben Keks wie nach der Anmeldung mit Kennwort.
+// einbetten). Die Ansicht wird mit einem Schluessel geoeffnet, /kueche?k=...,
+// abgeleitet aus dem Kennwort (ein neues Kennwort macht ihn ungueltig). Die
+// Seite schickt ihn als Kopfzeile, und er oeffnet nur die Wege der Ansicht.
 
 import (
 	"context"
@@ -34,27 +34,51 @@ func (d *Dienst) kuechenSchluessel() string {
 
 func (d *Dienst) kuechenSchluesselPasst(r *http.Request) bool {
 	s := d.kuechenSchluessel()
-	return s != "" && r.URL.Path == "/kueche" && gleich(r.URL.Query().Get("k"), s)
-}
-
-// kekserlaubt: der Keks, den die Anmeldung mit Kennwort (oder der Schluessel
-// der Kuechenansicht) setzt, laesst auch bei SSO durch.
-func (d *Dienst) keksErlaubt(r *http.Request) bool {
-	if d.kennwort == "" {
+	if s == "" {
 		return false
 	}
-	k, err := r.Cookie("foodr")
-	return err == nil && gleich(k.Value, d.merkmal())
+	// Die Ansicht schickt den Schluessel bei jedem Aufruf in einer Kopfzeile:
+	// eingebettet blockieren Browser (Firefox, Safari) den Keks oft. Er oeffnet
+	// nur die Wege, die die Ansicht braucht, nie Einstellungen oder SSO.
+	if gleich(r.Header.Get("X-Foodr-Kueche"), s) {
+		return kuechenWeg(r)
+	}
+	return r.URL.Path == "/kueche" && gleich(r.URL.Query().Get("k"), s)
+}
+
+// kuechenWeg: was die Kuechenansicht aufrufen darf.
+func kuechenWeg(r *http.Request) bool {
+	p, m := r.URL.Path, r.Method
+	switch {
+	case m == http.MethodGet && (p == "/api/plan" || p == "/api/rezepte" || p == "/api/regeln"):
+		return true
+	case m == http.MethodPost && (p == "/api/chat" || p == "/api/rezepte/erfinden" || p == "/api/plan/erzeugen"):
+		return true
+	case strings.HasPrefix(p, "/api/plan/tag/") && (m == http.MethodPut || m == http.MethodPost):
+		return true
+	case m == http.MethodGet && strings.HasPrefix(p, "/api/plan/") && strings.HasSuffix(p, "/einkauf"):
+		return true
+	case m == http.MethodPatch && strings.HasPrefix(p, "/api/einkauf/"):
+		return true
+	}
+	return false
+}
+
+// kuechenSeite: die Seite selbst traegt keine Daten und darf ohne Anmeldung
+// laden; eine Umleitung zur Anmeldung wuerde im Rahmen nur eine Fehlermeldung
+// des Browsers zeigen.
+func kuechenSeite(r *http.Request) bool {
+	return r.Method == http.MethodGet && r.URL.Path == "/kueche.html"
 }
 
 func (d *Dienst) kuecheOeffnen(w http.ResponseWriter, r *http.Request) {
+	// Der Schluessel wandert in den Anker: der geht an keinen Server und in
+	// kein Protokoll; die Seite merkt ihn sich und raeumt die Adresse auf.
+	ziel := "/kueche.html"
 	if d.kuechenSchluesselPasst(r) {
-		http.SetCookie(w, &http.Cookie{Name: "foodr", Value: d.merkmal(), Path: "/",
-			MaxAge: 60 * 60 * 24 * 365, HttpOnly: true, SameSite: http.SameSiteStrictMode,
-			Secure: r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"})
+		ziel += "#k=" + d.kuechenSchluessel()
 	}
-	// Der Schluessel soll nicht in der Adresszeile oder im Verlauf stehen bleiben.
-	http.Redirect(w, r, "/kueche.html", http.StatusFound)
+	http.Redirect(w, r, ziel, http.StatusFound)
 }
 
 // ---------- Gespraech ----------

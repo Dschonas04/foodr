@@ -198,13 +198,33 @@ const zustand = { reiter: 'woche', versatz: 0, plan: null, rezepte: null, offen:
 function lesen(k, v) { try { return JSON.parse(sessionStorage.getItem(k)) ?? v; } catch { return v; } }
 function merken(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* egal */ } }
 
+// Der Schluessel kommt im Anker (#k=...), bleibt nur in dieser Sitzung und
+// geht als Kopfzeile mit: eingebettet verlaesst sich die Seite nicht auf Kekse.
+const SCHLUESSEL = (() => {
+  const m = location.hash.match(/k=([0-9a-f]{64})/);
+  if (m) {
+    try { sessionStorage.setItem('foodr-kueche-k', m[1]); } catch { /* egal */ }
+    history.replaceState(null, '', location.pathname);
+    return m[1];
+  }
+  try { return sessionStorage.getItem('foodr-kueche-k') || ''; } catch { return ''; }
+})();
+
 async function ruf(pfad, methode = 'GET', rumpf) {
-  const r = await fetch(pfad, { method: methode, credentials: 'include',
-    headers: rumpf ? { 'Content-Type': 'application/json' } : {}, body: rumpf ? JSON.stringify(rumpf) : undefined });
+  const kopf = rumpf ? { 'Content-Type': 'application/json' } : {};
+  if (SCHLUESSEL) kopf['X-Foodr-Kueche'] = SCHLUESSEL;
+  const r = await fetch(pfad, { method: methode, credentials: 'include', headers: kopf, body: rumpf ? JSON.stringify(rumpf) : undefined });
+  if (r.status === 401) { zeigeAbgemeldet(); throw new Error('nicht angemeldet'); }
   const text = await r.text();
   let d; try { d = text ? JSON.parse(text) : null; } catch { d = text; }
   if (!r.ok) throw new Error((d && (d.fehler || d.error)) || r.statusText);
   return d;
+}
+
+function zeigeAbgemeldet() {
+  $('#inhalt').innerHTML = `<div class="karte leer"><p>Foodr kennt diese Ansicht nicht.</p>
+    <p class="klein">Öffne sie über die Adresse mit Schlüssel (in Home Assistant hinterlegt) oder melde dich in einem eigenen Tab an.</p>
+    <a class="knopf" href="/" target="_blank" rel="noopener">Foodr in neuem Tab öffnen</a></div>`;
 }
 
 function melden(text) {

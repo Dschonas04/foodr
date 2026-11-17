@@ -165,9 +165,13 @@ Das sind Schätzungen für den Alltag, keine Ernährungsberatung.
 eines Tages, Rezeptsuche, Planen, Chat mit dem Modell und Einkaufsliste. Gedacht
 zum Einbetten, etwa als Webseiten-Dashboard in Home Assistant.
 
-Eine Anmeldeseite lässt sich nicht einbetten. Mit gesetztem `FOODR_KENNWORT`
-öffnet `/kueche?k=SCHLÜSSEL` die Ansicht und setzt den Sitzungskeks; der
-Schlüssel ist HMAC-SHA256 des Kennworts über `foodr-kueche`, als Hex:
+Eine Anmeldeseite lässt sich nicht einbetten, und eingebettet blockieren
+Browser oft Kekse. Mit gesetztem `FOODR_KENNWORT` öffnet `/kueche?k=SCHLÜSSEL`
+die Ansicht; die Seite schickt den Schlüssel dann als Kopfzeile
+`X-Foodr-Kueche`, und er öffnet nur die Wege der Ansicht (Plan, Rezepte lesen,
+Erfinden, Chat, Einkauf), nie Einstellungen oder SSO. Ein neues Kennwort macht
+ihn ungültig. Der Schlüssel ist HMAC-SHA256 des Kennworts über `foodr-kueche`,
+als Hex:
 
 ```sh
 printf foodr-kueche | openssl dgst -sha256 -hmac "$FOODR_KENNWORT" -r | cut -d' ' -f1

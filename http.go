@@ -114,6 +114,9 @@ func (d *Dienst) erlaubt(r *http.Request) bool {
 	if gleich(r.Header.Get("X-Foodr"), d.kennwort) {
 		return true
 	}
+	if d.kuechenSchluesselPasst(r) {
+		return true
+	}
 	if k, err := r.Cookie("foodr"); err == nil && gleich(k.Value, d.merkmal()) {
 		return true
 	}
