@@ -86,20 +86,24 @@ func (d *Dienst) kuecheOeffnen(w http.ResponseWriter, r *http.Request) {
 
 // ---------- Neues Rezept auf Zuruf ----------
 
-const erfindAnweisung = `Du entwickelst ein neues Rezept fuer einen Haushalt.
+const erfindAnweisung = `Du schreibst ein Rezept fuer einen Haushalt.
 Antworte ausschliesslich mit JSON in genau dieser Form:
-{"titel":"","beschreibung":"","portionen":2,"dauer_min":30,
- "art":"hauptgericht","kost":"vegetarisch","aufwand":"schnell",
+{"titel":"","beschreibung":"","portionen":2,"dauer_min":45,
+ "art":"hauptgericht","kost":"fleisch","aufwand":"mittel",
  "saison":[],"etiketten":[],
- "zutaten":[{"menge":200,"einheit":"g","name":"Nudeln","kategorie":"Trocken und Vorrat"}],
+ "zutaten":[{"menge":200,"einheit":"g","name":"Zwiebel","kategorie":"Obst und Gemüse"}],
  "schritte":["..."],"hinweise":"","quelle":""}
 Regeln:
-- Ein alltagstaugliches Abendessen, das zum Wunsch passt.
-- art ist hauptgericht. kost ist vegan, vegetarisch, fisch oder fleisch, passend zu den Zutaten.
-- aufwand ist schnell (bis 25 min), mittel (bis 60 min) oder aufwendig.
+- Nennt der Wunsch ein bestimmtes Gericht, schreibst du genau dieses Gericht, so wie es
+  ueblicherweise gekocht wird, mit seiner echten Dauer und seinem echten Aufwand.
+  Der Titel ist dann der Name des Gerichts, ohne Zusaetze wie "schnell", "einfach" oder "klassisch".
+- Ist kein bestimmtes Gericht genannt, entwickelst du ein passendes alltagstaugliches Abendessen.
+- art ist hauptgericht, beilage, fruehstueck oder nachtisch. kost ist vegan, vegetarisch, fisch oder fleisch, passend zu den Zutaten.
+- aufwand ist schnell (bis 25 min), mittel (bis 60 min) oder aufwendig; dauer_min ist die ehrliche Gesamtzeit.
 - einheit ist g, kg, ml, l, EL, TL, Stueck, Prise, Bund, Zehe, Dose, Packung oder leer.
 - kategorie ist eine von: Obst und Gemüse, Fleisch und Fisch, Molkerei und Eier, Kühlregal, Trocken und Vorrat, Gewürze, Tiefkühl, Brot und Backwaren, Getränke, Sonstiges.
-- Zutaten einzeln, keine Mengen im Namen. 4 bis 8 kurze Schritte.
+- Zutaten einzeln, keine Mengen im Namen. 4 bis 9 klare Schritte.
+- etiketten: 1 bis 3 kurze Stichworte (Kueche oder Art, z. B. Italienisch, Eintopf, Ofen), nicht Kost oder Aufwand wiederholen.
 - Das Gericht darf keines der genannten vorhandenen Rezepte sein.
 - Echte deutsche Umlaute und ß verwenden (ä, ö, ü, ß), niemals ae, oe, ue oder ss als Ersatz. Keine Emojis.`
 
