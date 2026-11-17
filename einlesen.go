@@ -18,15 +18,17 @@ import (
 // Nachricht, von einer Seite, aus einem Kochbuch abgeschrieben. Das Modell
 // bringt den Wust in die Form, die die Ablage erwartet.
 
-const einleseAnweisung = `Du liest ein Rezept und gibst es strukturiert zurueck.
+var einleseAnweisung = `Du liest ein Rezept und gibst es strukturiert zurueck.
 Antworte ausschliesslich mit JSON:
 {"titel":"","beschreibung":"","portionen":2,"dauer_min":30,
- "art":"hauptgericht","kost":"fleisch","aufwand":"mittel",
- "saison":["Sommer"],"etiketten":["Auflauf"],
+ "art":"hauptgericht","kost":"fleisch","aufwand":"mittel","gruppe":"","kueche":"",
+ "saison":["Sommer"],"etiketten":[],
  "zutaten":[{"menge":200,"einheit":"g","name":"Hackfleisch","kategorie":"Fleisch und Fisch"}],
  "schritte":["..."],"hinweise":"","quelle":""}
 Regeln:
 - art ist hauptgericht, beilage, fruehstueck oder nachtisch.
+- gruppe ist genau eine von: ` + gruppenListe() + `
+- kueche ist genau eine von: ` + kuechenListe() + `
 - kost ist vegan, vegetarisch, fisch oder fleisch, richte dich nach den Zutaten.
 - aufwand ist schnell (bis 25 min), mittel (bis 60 min) oder aufwendig.
 - einheit ist g, kg, ml, l, EL, TL, Stueck, Prise, Bund, Zehe, Dose, Packung oder leer.

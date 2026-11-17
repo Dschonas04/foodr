@@ -86,24 +86,30 @@ func (d *Dienst) kuecheOeffnen(w http.ResponseWriter, r *http.Request) {
 
 // ---------- Neues Rezept auf Zuruf ----------
 
-const erfindAnweisung = `Du schreibst ein Rezept fuer einen Haushalt.
-Antworte ausschliesslich mit JSON in genau dieser Form:
+var erfindAnweisung = `Du schreibst ein Rezept für eine Rezeptsammlung, so wie es in einem guten Hauskochbuch steht.
+Antworte ausschließlich mit JSON in genau dieser Form:
 {"titel":"","beschreibung":"","portionen":2,"dauer_min":45,
- "art":"hauptgericht","kost":"fleisch","aufwand":"mittel",
- "saison":[],"etiketten":[],
- "zutaten":[{"menge":200,"einheit":"g","name":"Zwiebel","kategorie":"Obst und Gemüse"}],
- "schritte":["..."],"hinweise":"","quelle":""}
+ "art":"hauptgericht","kost":"fleisch","aufwand":"mittel","gruppe":"","kueche":"",
+ "saison":[],"zutaten":[{"menge":200,"einheit":"g","name":"Zwiebel","kategorie":"Obst und Gemüse"}],
+ "schritte":["..."],"hinweise":""}
 Regeln:
 - Nennt der Wunsch ein bestimmtes Gericht, schreibst du genau dieses Gericht, so wie es
-  ueblicherweise gekocht wird, mit seiner echten Dauer und seinem echten Aufwand.
-  Der Titel ist dann der Name des Gerichts, ohne Zusaetze wie "schnell", "einfach" oder "klassisch".
+  üblicherweise gekocht wird, mit seiner echten Dauer und seinem echten Aufwand.
+  Der Titel ist dann der Name des Gerichts, ohne Zusätze wie "schnell", "einfach" oder "klassisch".
 - Ist kein bestimmtes Gericht genannt, entwickelst du ein passendes alltagstaugliches Abendessen.
+- gruppe ist genau eine von: ` + gruppenListe() + `
+- kueche ist genau eine von: ` + kuechenListe() + `
 - art ist hauptgericht, beilage, fruehstueck oder nachtisch. kost ist vegan, vegetarisch, fisch oder fleisch, passend zu den Zutaten.
 - aufwand ist schnell (bis 25 min), mittel (bis 60 min) oder aufwendig; dauer_min ist die ehrliche Gesamtzeit.
 - einheit ist g, kg, ml, l, EL, TL, Stueck, Prise, Bund, Zehe, Dose, Packung oder leer.
 - kategorie ist eine von: Obst und Gemüse, Fleisch und Fisch, Molkerei und Eier, Kühlregal, Trocken und Vorrat, Gewürze, Tiefkühl, Brot und Backwaren, Getränke, Sonstiges.
-- Zutaten einzeln, keine Mengen im Namen. 4 bis 9 klare Schritte.
-- etiketten: 1 bis 3 kurze Stichworte (Kueche oder Art, z. B. Italienisch, Eintopf, Ofen), nicht Kost oder Aufwand wiederholen.
+- Zutaten einzeln, keine Mengen im Namen. 4 bis 9 Schritte.
+- Schreibstil wie ein Kochbuch: sachlich, knapp, ohne Werbesprache. Keine Wörter wie perfekt, köstlich,
+  herrlich, himmlisch, Genuss, Geschmacksexplosion, aromatisch, saftig, goldbraun, ein Hauch von.
+- beschreibung: ein kurzer sachlicher Satz, was es ist (z. B. "Schweinebauch mit Kruste, dazu Kartoffelknödel und Dunkelbiersoße.").
+  Nicht mit "Ein" oder "Eine" beginnen.
+- Schritte im Infinitiv, wie im Kochbuch ("Zwiebeln würfeln und in Butter glasig dünsten.").
+- hinweise: ein praktischer Tipp aus der Küche oder leer.
 - Das Gericht darf keines der genannten vorhandenen Rezepte sein.
 - Echte deutsche Umlaute und ß verwenden (ä, ö, ü, ß), niemals ae, oe, ue oder ss als Ersatz. Keine Emojis.`
 
@@ -216,7 +222,8 @@ func (d *Dienst) erfinde(ctx context.Context, wunsch string, tagID int, woche st
 		return Rezept{}, nil, letzter
 	}
 	neu.ID = 0
-	neu.Quelle = "Foodr-Assistent"
+	neu.Quelle = ""
+	neu.Etiketten = Liste{}
 	ordne(&neu)
 	if vorhanden[strings.ToLower(strings.TrimSpace(neu.Titel))] {
 		return Rezept{}, nil, fmt.Errorf("„%s“ gibt es schon im Pool", neu.Titel)

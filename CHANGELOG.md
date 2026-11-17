@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- Rezepte haben eine feste Gruppe (Suppen, Eintöpfe, Nudeln, Aufläufe ...) und eine Küche (Deutsch, Italienisch, Indien ...). Rezeptlisten sind danach gegliedert und filterbar, die Küchenansicht startet mit Gruppenkacheln; der Chat sucht auch nach Gruppe und Küche.
+- Neue Rezepte im Kochbuchstil: sachliche Beschreibung, Schritte im Infinitiv, keine Werbesprache; ohne Quellenvermerk und ohne freie Etiketten.
+- Die Oberfläche nennt das Modell nicht mehr beim Namen.
+
 - Chat mit Werkzeugen: der Kochassistent liest Plan, Rezepte, Vorrat und Lebensmitteldatenbank selbst nach und handelt (Tag belegen, tauschen, neu erfinden, abhaken, Einkaufsliste und Vorrat ergänzen, Woche planen). Die Küchenansicht zeigt, was er geändert hat, und lädt den Plan neu.
 - Anfragen an denkende Modelle (gemma4) laufen ohne Denkphase (`think: false`): rund zehnmal schneller, und JSON-Antworten bleiben nicht mehr leer.
 - Anweisungen an das Modell verlangen echte Umlaute; „Umlaute ausschreiben“ wurde als ae/oe verstanden.

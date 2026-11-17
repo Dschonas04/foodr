@@ -111,6 +111,15 @@ h2 { font-size: 15px; margin: 0 0 10px; }
 .filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
 .filter button { border: 1px solid var(--linie); background: var(--flaeche); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
 .filter button.an { background: var(--tinte); color: var(--grund); border-color: var(--tinte); }
+.gruppen { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.karte.gruppe { text-align: left; padding: 14px 16px; display: grid; gap: 4px; cursor: pointer; color: inherit; font: inherit; }
+.karte.gruppe:hover { border-color: var(--tinte); }
+.gname { font-weight: 600; font-size: 16px; }
+.gbsp { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ghead { margin: 20px 0 10px; font-size: 16px; }
+.gruppenkopf { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.gruppenkopf h2 { margin: 0; font-size: 18px; }
+.wahl { border: 1px solid var(--linie); background: var(--flaeche); color: inherit; border-radius: 999px; padding: 4px 10px; font-size: 13px; }
 .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .rezept { padding: 14px; display: grid; gap: 8px; align-content: start; }
 .rezept .name { font-weight: 600; }
@@ -225,7 +234,7 @@ const SYM = {
 };
 
 const zustand = { reiter: 'woche', versatz: 0, plan: null, rezepte: null, offen: new Set(), wunschFuer: null,
-                  arbeitet: new Set(), suche: '', kost: '', chat: lesen('foodr-chat', []), regeln: null };
+                  arbeitet: new Set(), suche: '', kost: '', gruppe: '', kueche: '', chat: lesen('foodr-chat', []), regeln: null };
 
 function lesen(k, v) { try { return JSON.parse(sessionStorage.getItem(k)) ?? v; } catch { return v; } }
 function merken(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* egal */ } }
@@ -278,8 +287,7 @@ function chips(r) {
     ${r.dauer_min ? `<span class="chip">${r.dauer_min} min</span>` : ''}
     ${r.kost ? `<span class="chip ${esc(r.kost)}">${esc(KOST[r.kost] || r.kost)}</span>` : ''}
     ${r.aufwand ? `<span class="chip">${esc(r.aufwand)}</span>` : ''}
-    ${[...new Set((r.etiketten || []).filter((e) => ![r.aufwand, r.kost, KOST[r.kost]].includes(String(e).toLowerCase()) && e !== KOST[r.kost]))]
-      .slice(0, 3).map((e) => `<span class="chip">${esc(e)}</span>`).join('')}</div>`;
+    ${r.kueche && r.kueche !== 'International' ? `<span class="chip">${esc(r.kueche)}</span>` : ''}</div>`;
 }
 
 function menge(z) {
@@ -331,9 +339,9 @@ function zeigeWoche() {
       <div class="aktionen">
         <button class="knopf ${tagHeute.gekocht ? 'gut' : ''}" data-gekocht="${tagHeute.id}" data-wert="${!tagHeute.gekocht}">${SYM.haken}${tagHeute.gekocht ? 'Gekocht' : 'Als gekocht markieren'}</button>
         <button class="knopf" data-tauschen="${tagHeute.id}" ${arbeitet ? 'disabled' : ''}>${SYM.tauschen}Anderes Gericht</button>
-        <button class="knopf" data-erfinden="${tagHeute.id}" ${arbeitet ? 'disabled' : ''}>${SYM.erfinden}Neu erfinden</button>
+        <button class="knopf" data-erfinden="${tagHeute.id}" ${arbeitet ? 'disabled' : ''}>${SYM.erfinden}Neues Rezept</button>
         ${r ? `<button class="knopf" data-auf="${tagHeute.id}">${SYM.auf}Rezept</button>` : ''}
-        ${arbeitet ? '<span class="denkt">gemma4 kocht etwas aus …</span>' : ''}
+        ${arbeitet ? '<span class="denkt">Rezept wird geschrieben …</span>' : ''}
       </div>
       ${wunschZeile(tagHeute.id)}
       ${zustand.offen.has(tagHeute.id) ? details(r) : ''}
@@ -347,7 +355,7 @@ function zeigeWoche() {
         ${arbeitet ? '<span class="denkt">wird ausgetauscht …</span>' : ''}</div>
       <div class="rechts">
         <button class="symbolknopf" title="Anderes Gericht aus dem Pool" aria-label="Anderes Gericht" data-tauschen="${t.id}" ${arbeitet ? 'disabled' : ''}>${SYM.tauschen}</button>
-        <button class="symbolknopf" title="Neues Gericht erfinden lassen" aria-label="Neu erfinden" data-erfinden="${t.id}" ${arbeitet ? 'disabled' : ''}>${SYM.erfinden}</button>
+        <button class="symbolknopf" title="Neues Rezept für diesen Tag" aria-label="Neues Rezept" data-erfinden="${t.id}" ${arbeitet ? 'disabled' : ''}>${SYM.erfinden}</button>
         <button class="symbolknopf" title="${t.gekocht ? 'Nicht gekocht' : 'Gekocht'}" aria-label="Gekocht" data-gekocht="${t.id}" data-wert="${!t.gekocht}">${SYM.haken}</button>
         ${r ? `<button class="symbolknopf" title="Rezept zeigen" aria-label="Rezept zeigen" data-auf="${t.id}">${SYM.auf}</button>` : ''}
       </div>
@@ -365,7 +373,7 @@ async function tauschen(id) {
     zustand.plan = await ruf(`/api/plan/tag/${id}/tauschen`, 'POST', { woche: zustand.plan.woche });
     melden('Ausgetauscht.');
   } catch (f) {
-    melden(/kein anderes/.test(f.message) ? 'Im Pool ist nichts mehr übrig. Lass ein neues Gericht erfinden.' : 'Tauschen ging nicht: ' + f.message);
+    melden(/kein anderes/.test(f.message) ? 'Im Pool ist nichts mehr übrig. Leg ein neues Rezept an.' : 'Tauschen ging nicht: ' + f.message);
     if (/kein anderes/.test(f.message)) zustand.wunschFuer = id;
   } finally { zustand.arbeitet.delete(id); zeige(); }
 }
@@ -377,7 +385,7 @@ async function erfinden(id, wunsch) {
     if (raus.plan) zustand.plan = raus.plan;
     zustand.rezepte = null;
     melden(`Neu im Plan: ${raus.rezept.titel}`);
-  } catch (f) { melden('Erfinden ging nicht: ' + f.message); }
+  } catch (f) { melden('Das neue Rezept ging nicht: ' + f.message); }
   finally { zustand.arbeitet.delete(id); zeige(); }
 }
 
@@ -390,11 +398,17 @@ async function gekocht(id, wert) {
 
 async function ladeRezepte() { if (!zustand.rezepte) zustand.rezepte = await ruf('/api/rezepte').catch(() => []); }
 
+const GRUPPEN = ['Suppen', 'Eintöpfe', 'Nudeln', 'Aufläufe und Gratins', 'Pfannengerichte', 'Braten und Schmorgerichte',
+  'Kurzgebratenes', 'Currys', 'Wok und Asianudeln', 'Reis und Getreide', 'Kartoffelgerichte', 'Gemüsegerichte',
+  'Fisch und Meeresfrüchte', 'Salate und Bowls', 'Pizza, Quiche und Flammkuchen', 'Brot und Snacks', 'Frühstück', 'Süßes'];
+
 function passt(r) {
   if (zustand.kost && r.kost !== zustand.kost) return false;
+  if (zustand.gruppe && (r.gruppe || 'Sonstiges') !== zustand.gruppe) return false;
+  if (zustand.kueche && r.kueche !== zustand.kueche) return false;
   const q = zustand.suche.trim().toLowerCase();
   if (!q) return true;
-  const heu = [r.titel, r.beschreibung, ...(r.etiketten || []), ...(r.zutaten || []).map((z) => z.name)].join(' ').toLowerCase();
+  const heu = [r.titel, r.beschreibung, r.gruppe, r.kueche, ...(r.etiketten || []), ...(r.zutaten || []).map((z) => z.name)].join(' ').toLowerCase();
   return q.split(/\s+/).every((w) => heu.includes(w));
 }
 
@@ -405,24 +419,52 @@ function tagAuswahl(rid) {
     ${p.tage.map((t) => { const d = datum(t.tag); return `<option value="${t.id}">${TAGNAME[d.getDay()]} ${d.getDate()}.</option>`; }).join('')}</select>`;
 }
 
+function rezeptKarte(r) {
+  return `<article class="karte rezept">
+    <div class="name">${esc(r.titel)}</div>${chips(r)}
+    ${r.beschreibung ? `<div class="leise klein">${esc(r.beschreibung)}</div>` : ''}
+    <div class="unten">${tagAuswahl(r.id)}<button class="symbolknopf" title="Rezept zeigen" aria-label="Rezept zeigen" data-rauf="${r.id}">${SYM.auf}</button></div>
+    ${zustand.offen.has('r' + r.id) ? details(r) : ''}</article>`;
+}
+
 function zeigeRezepte() {
-  const liste = (zustand.rezepte || []).filter(passt);
+  const alle = zustand.rezepte || [];
+  const liste = alle.filter(passt);
   const fokus = document.activeElement?.id === 'suchfeld';
+  const kuechen = [...new Set(alle.map((r) => r.kueche).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'de'));
+  const gruppeVon = (r) => r.gruppe || 'Sonstiges';
+  const uebersicht = !zustand.suche.trim() && !zustand.gruppe;
+  let rumpf;
+  if (!liste.length) {
+    rumpf = `<div class="karte leer">Nichts gefunden.</div>`;
+  } else if (uebersicht) {
+    // Ohne Suche und ohne gewählte Gruppe: die Gruppen als Kacheln.
+    const zahl = {};
+    liste.forEach((r) => { zahl[gruppeVon(r)] = (zahl[gruppeVon(r)] || 0) + 1; });
+    rumpf = `<div class="gruppen">${[...GRUPPEN, 'Sonstiges'].filter((g) => zahl[g]).map((g) => `<button class="karte gruppe" data-gruppe="${esc(g)}">
+      <span class="gname">${esc(g)}</span><span class="leise klein">${zahl[g]} Rezepte</span>
+      <span class="gbsp leise klein">${liste.filter((r) => gruppeVon(r) === g).slice(0, 3).map((r) => esc(r.titel)).join(' · ')}</span></button>`).join('')}</div>`;
+  } else if (zustand.gruppe) {
+    rumpf = `<div class="raster">${liste.map(rezeptKarte).join('')}</div>`;
+  } else {
+    rumpf = [...GRUPPEN, 'Sonstiges'].map((g) => {
+      const teil = liste.filter((r) => gruppeVon(r) === g);
+      return teil.length ? `<h3 class="ghead">${esc(g)} <span class="leise klein">${teil.length}</span></h3><div class="raster">${teil.map(rezeptKarte).join('')}</div>` : '';
+    }).join('');
+  }
   $('#inhalt').innerHTML = `
     <div class="suche"><input id="suchfeld" class="feld" type="search" placeholder="Suchen nach Gericht, Zutat oder Stichwort" value="${esc(zustand.suche)}"></div>
     <div class="filter">${['', ...Object.keys(KOST)].map((k) => `<button data-kost="${k}" class="${zustand.kost === k ? 'an' : ''}">${k ? KOST[k] : 'Alle'}</button>`).join('')}
-      <span class="leise klein" style="align-self:center;margin-left:6px">${liste.length} von ${(zustand.rezepte || []).length}</span></div>
-    ${liste.length ? `<div class="raster">${liste.map((r) => `<article class="karte rezept">
-        <div class="name">${esc(r.titel)}</div>${chips(r)}
-        ${r.beschreibung ? `<div class="leise klein">${esc(r.beschreibung)}</div>` : ''}
-        <div class="unten">${tagAuswahl(r.id)}<button class="symbolknopf" title="Rezept zeigen" aria-label="Rezept zeigen" data-rauf="${r.id}">${SYM.auf}</button></div>
-        ${zustand.offen.has('r' + r.id) ? details(r) : ''}</article>`).join('')}</div>`
-    : `<div class="karte leer">Nichts gefunden.</div>`}
+      <select id="kuecheWahl" class="wahl" aria-label="Küche"><option value="">Alle Küchen</option>
+        ${kuechen.map((k) => `<option ${zustand.kueche === k ? 'selected' : ''}>${esc(k)}</option>`).join('')}</select>
+      <span class="leise klein" style="align-self:center;margin-left:6px">${liste.length} von ${alle.length}</span></div>
+    ${zustand.gruppe ? `<div class="gruppenkopf"><button class="knopf" data-gruppe="">‹ Alle Gruppen</button><h2>${esc(zustand.gruppe)}</h2></div>` : ''}
+    ${rumpf}
     <section class="karte erfinden">
       <h2 style="margin:0">Nichts dabei?</h2>
-      <p class="leise klein" style="margin:0">gemma4 erfindet ein neues Rezept nach deinem Wunsch und legt es in den Pool.</p>
+      <p class="leise klein" style="margin:0">Beschreib, worauf du Lust hast. Das Rezept kommt in den Pool.</p>
       <form class="wunsch" id="neuesRezept"><input class="feld" name="wunsch" placeholder="z. B. etwas mit Kürbis, schnell, vegetarisch" value="${esc(zustand.suche)}" autocomplete="off">
-        <button class="knopf haupt">${SYM.erfinden}Erfinden</button></form>
+        <button class="knopf haupt">${SYM.erfinden}Neues Rezept</button></form>
       <div id="erfindStand"></div>
     </section>`;
   if (fokus) { const f = $('#suchfeld'); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
@@ -438,7 +480,7 @@ async function zeigePlanen() {
   const woche = montag(zustand.versatz);
   $('#inhalt').innerHTML = `<section class="karte planen">
     <div><h2 style="margin:0 0 4px">Woche ab ${datum(woche).toLocaleDateString('de-DE')} planen</h2>
-      <p class="leise klein" style="margin:0">gemma4 wählt die Gerichte aus dem Pool. Ein vorhandener Plan dieser Woche wird ersetzt.</p></div>
+      <p class="leise klein" style="margin:0">Die Gerichte kommen aus dem Pool. Ein vorhandener Plan dieser Woche wird ersetzt.</p></div>
     <label class="ueber" for="personen">Personen</label>
     <input class="feld" id="personen" type="number" min="1" max="12" value="${Number(rg.personen) || 2}" style="max-width:120px">
     <label class="ueber">An diesen Tagen</label>
@@ -453,7 +495,7 @@ async function zeigePlanen() {
 
 async function planErzeugen(knopf) {
   knopf.disabled = true;
-  $('#planStand').innerHTML = '<span class="denkt">gemma4 stellt die Woche zusammen …</span>';
+  $('#planStand').innerHTML = '<span class="denkt">Die Woche wird zusammengestellt …</span>';
   try {
     const raus = await ruf('/api/plan/erzeugen', 'POST', {
       woche: montag(zustand.versatz), personen: Number($('#personen').value) || 2, wuensche: $('#wuensche').value,
@@ -479,8 +521,8 @@ function zeigeChat() {
   const v = zustand.chat;
   $('#inhalt').innerHTML = `<section class="chat">
     <div class="verlauf" id="verlauf">${v.length ? v.map((n) => `<div class="blase ${n.role === 'user' ? 'ich' : 'ki'}">${n.role === 'user' ? esc(n.content) : md(n.content)}${n.schritte?.length ? `<div class="taten">${n.schritte.map((s) => `<span>${SYM.haken}${esc(s)}</span>`).join('')}</div>` : ''}</div>`).join('')
-      : '<div class="leer">Der Kochassistent kennt Plan, Rezepte, Vorrat und Lebensmitteldatenbank und kann selbst handeln: Gerichte tauschen, neue erfinden, Tage belegen, die Woche planen, die Einkaufsliste ergänzen. Frag einfach.</div>'}
-      ${zustand.chatLaeuft ? '<div class="blase ki"><span class="denkt">gemma4 arbeitet …</span></div>' : ''}</div>
+      : '<div class="leer">Frag nach dem Plan, nach Rezepten oder Nährwerten. Der Chat kann auch Gerichte tauschen, neue Rezepte anlegen, die Woche planen und die Einkaufsliste ergänzen.</div>'}
+      ${zustand.chatLaeuft ? '<div class="blase ki"><span class="denkt">Moment …</span></div>' : ''}</div>
     <div>
       <div class="vorschlaege">${['Was gibt es heute, und was muss ich vorbereiten?', 'Tausch morgen gegen etwas Vegetarisches', 'Ich habe Zucchini und Feta übrig, was kann ich kochen?', 'Plan die nächste Woche mit viel Gemüse', 'Wie viel Eiweiß hat Skyr?', 'Setz Kaffee auf die Einkaufsliste']
         .map((s) => `<button data-frage="${esc(s)}">${esc(s)}</button>`).join('')}
@@ -606,6 +648,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (b.dataset.kost !== undefined) { zustand.kost = b.dataset.kost; return zeigeRezepte(); }
+  if (b.dataset.gruppe !== undefined) { zustand.gruppe = b.dataset.gruppe; zeigeRezepte(); return window.scrollTo({ top: 0 }); }
   if (b.id === 'planErzeugen') return planErzeugen(b);
   if (b.dataset.frage) return fragen(b.dataset.frage);
   if (b.dataset.neu !== undefined) { zustand.chat = []; merken('foodr-chat', []); return zeige(); }
@@ -618,7 +661,7 @@ document.addEventListener('submit', async (e) => {
   if (f.id === 'chatForm') { const t = $('#chatFeld').value; return fragen(t); }
   if (f.id === 'neuesRezept') {
     const knopf = $('button', f); knopf.disabled = true;
-    $('#erfindStand').innerHTML = '<span class="denkt">gemma4 entwickelt ein Rezept …</span>';
+    $('#erfindStand').innerHTML = '<span class="denkt">Rezept wird geschrieben …</span>';
     try {
       const raus = await ruf('/api/rezepte/erfinden', 'POST', { wunsch: f.wunsch.value });
       zustand.rezepte = null; zustand.suche = ''; await ladeRezepte();
@@ -640,6 +683,7 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('change', async (e) => {
   const s = e.target;
+  if (s.id === 'kuecheWahl') { zustand.kueche = s.value; return zeigeRezepte(); }
   if (s.dataset.legen && s.value) {
     zustand.plan = await ruf(`/api/plan/tag/${s.value}`, 'PUT', { rezept_id: Number(s.dataset.legen), hinweis: '', woche: zustand.plan.woche })
       .catch((f) => (melden(f.message), zustand.plan));

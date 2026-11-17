@@ -569,22 +569,33 @@ async function zeigeRezepte() {
     </div>
     ${rezepte.length ? `<div class="suchfeld" style="margin-bottom:18px">${ICON.lupe}
       <input id="rsuche" type="search" placeholder="Nach Gericht oder Zutat suchen" aria-label="Rezepte durchsuchen"></div>
-      <div class="kacheln" id="rliste"></div>`
+      <div class="reihe" style="margin-bottom:18px;gap:8px;flex-wrap:wrap">
+        <select id="rgruppe" aria-label="Gruppe" style="width:auto"><option value="">Alle Gruppen</option>${[...new Set(rezepte.map(r => r.gruppe || 'Sonstiges'))].sort((a, b) => a.localeCompare(b, 'de')).map(g => `<option>${esc(g)}</option>`).join('')}</select>
+        <select id="rkueche" aria-label="Küche" style="width:auto"><option value="">Alle Küchen</option>${[...new Set(rezepte.map(r => r.kueche).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de')).map(k => `<option>${esc(k)}</option>`).join('')}</select>
+        <span class="leise klein" id="rzahl"></span></div>
+      <div id="rliste"></div>`
     : `<div class="feld leer"><h2>Der Pool ist leer</h2><p>Füge ein Rezept ein oder schreib es selbst auf.</p>
       <a class="knopf haupt" href="#/rezept-neu">Rezept anlegen</a></div>`}`);
   if (!rezepte.length) return;
   const liste = () => {
-    const q = $('#rsuche').value.toLowerCase();
-    const t = rezepte.filter(r => !q || r.titel.toLowerCase().includes(q) || r.zutaten.some(z => z.name.toLowerCase().includes(q)));
-    $('#rliste').innerHTML = t.length ? t.map(r => `<a class="kachel" href="#/rezept/${esc(r.id)}">
+    const q = $('#rsuche').value.toLowerCase(), g = $('#rgruppe').value, k = $('#rkueche').value;
+    const t = rezepte.filter(r => (!g || (r.gruppe || 'Sonstiges') === g) && (!k || r.kueche === k)
+      && (!q || r.titel.toLowerCase().includes(q) || r.zutaten.some(z => z.name.toLowerCase().includes(q))));
+    $('#rzahl').textContent = `${t.length} von ${rezepte.length}`;
+    const gruppen = [...new Set(t.map(r => r.gruppe || 'Sonstiges'))].sort((a, b) => a.localeCompare(b, 'de'));
+    const kachel = r => `<a class="kachel" href="#/rezept/${esc(r.id)}">
       <h3>${esc(r.titel)}</h3>
       <div class="chips"><span class="chip">${esc(r.dauer_min)} min</span><span class="chip">${esc(KOST[r.kost] || r.kost)}</span>
-        <span class="chip">${esc(r.portionen)} Portionen</span></div>
+        ${r.kueche && r.kueche !== 'International' ? `<span class="chip">${esc(r.kueche)}</span>` : ''}</div>
       <div class="fuss">${streifen(werte[r.id])}${kcal(werte[r.id], 'kcal')}</div>
-    </a>`).join('') : '<p class="leise">Kein Rezept passt.</p>';
+    </a>`;
+    $('#rliste').innerHTML = t.length ? gruppen.map(gr => `<h2 style="margin:22px 0 12px">${esc(gr)} <span class="leise klein">${t.filter(r => (r.gruppe || 'Sonstiges') === gr).length}</span></h2>
+      <div class="kacheln">${t.filter(r => (r.gruppe || 'Sonstiges') === gr).map(kachel).join('')}</div>`).join('') : '<p class="leise">Kein Rezept passt.</p>';
   };
   liste();
   $('#rsuche').oninput = liste;
+  $('#rgruppe').onchange = liste;
+  $('#rkueche').onchange = liste;
 }
 
 async function zeigeRezept(id) {
@@ -593,6 +604,7 @@ async function zeigeRezept(id) {
     <div class="seitenkopf"><div><h1>${esc(r.titel)}</h1>
       <div class="chips" style="margin-top:12px"><span class="chip">${esc(r.dauer_min)} min</span><span class="chip">${esc(KOST[r.kost] || r.kost)}</span>
         <span class="chip">${esc(AUFWAND[r.aufwand] || r.aufwand)}</span><span class="chip">${esc(r.portionen)} Portionen</span>
+        ${r.gruppe ? `<span class="chip">${esc(r.gruppe)}</span>` : ''}${r.kueche ? `<span class="chip">${esc(r.kueche)}</span>` : ''}
         ${r.zuletzt_gekocht ? `<span class="chip">zuletzt gekocht am ${datum(r.zuletzt_gekocht, { day: 'numeric', month: 'long' })}</span>` : ''}</div>
       ${r.beschreibung ? `<p class="unterzeile" style="max-width:70ch">${esc(r.beschreibung)}</p>` : ''}</div></div>
     <div class="spalten">

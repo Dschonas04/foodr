@@ -89,6 +89,8 @@ var werkzeuge = []wWerkzeug{
 		map[string]any{
 			"suche":       feld("string", "Suchbegriffe, z. B. Kürbis, Nudeln, Suppe; leer fuer alle"),
 			"kost":        feld("string", "vegan, vegetarisch, fisch oder fleisch"),
+			"gruppe":      feld("string", "optional, eine von: "+gruppenListe()),
+			"kueche":      feld("string", "optional, eine von: "+kuechenListe()),
 			"max_minuten": feld("integer", "hoechstens so viele Minuten Zubereitung"),
 		}),
 	werkzeug("rezept_zeigen", "Zeigt ein Rezept vollstaendig: Zutaten mit Mengen, Schritte, Hinweise.",
@@ -264,6 +266,7 @@ func (d *Dienst) fuehreAus(ctx context.Context, name string, roh json.RawMessage
 		suche := strings.ToLower(text("suche"))
 		kost := strings.ToLower(text("kost"))
 		maxMin := zahl("max_minuten")
+		gruppe, kueche := text("gruppe"), text("kueche")
 		var treffer []map[string]any
 		for _, r := range rez {
 			if kost != "" && r.Kost != kost {
@@ -272,8 +275,11 @@ func (d *Dienst) fuehreAus(ctx context.Context, name string, roh json.RawMessage
 			if maxMin > 0 && r.DauerMin > maxMin {
 				continue
 			}
+			if gruppe != "" && !strings.EqualFold(r.Gruppe, gruppe) || kueche != "" && !strings.EqualFold(r.Kueche, kueche) {
+				continue
+			}
 			if suche != "" {
-				heu := strings.ToLower(r.Titel + " " + r.Beschreibung + " " + strings.Join(r.Etiketten, " "))
+				heu := strings.ToLower(r.Titel + " " + r.Beschreibung + " " + r.Gruppe + " " + r.Kueche + " " + strings.Join(r.Etiketten, " "))
 				for _, z := range r.Zutaten {
 					heu += " " + strings.ToLower(z.Name)
 				}
@@ -289,6 +295,7 @@ func (d *Dienst) fuehreAus(ctx context.Context, name string, roh json.RawMessage
 				}
 			}
 			treffer = append(treffer, map[string]any{"rezept_id": r.ID, "titel": r.Titel, "kost": r.Kost,
+				"gruppe": r.Gruppe, "kueche": r.Kueche,
 				"dauer_min": r.DauerMin, "aufwand": r.Aufwand})
 			if len(treffer) >= 25 {
 				break

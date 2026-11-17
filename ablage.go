@@ -37,7 +37,7 @@ func OeffneAblage(url, schema string) (*Ablage, error) {
 // ---------- Rezepte ----------
 
 const rezeptSpalten = `id, titel, beschreibung, portionen, dauer_min, art, kost, aufwand,
-	saison, etiketten, zutaten, schritte, hinweise, quelle, bewertung, zuletzt_gekocht`
+	saison, etiketten, zutaten, schritte, hinweise, quelle, bewertung, zuletzt_gekocht, gruppe, kueche`
 
 func leseRezept(s interface {
 	Scan(...any) error
@@ -47,7 +47,7 @@ func leseRezept(s interface {
 	var gekocht sql.NullTime
 	err := s.Scan(&r.ID, &r.Titel, &r.Beschreibung, &r.Portionen, &r.DauerMin, &r.Art, &r.Kost,
 		&r.Aufwand, pq.Array((*[]string)(&r.Saison)), pq.Array((*[]string)(&r.Etiketten)), &zutaten, &schritte,
-		&r.Hinweise, &r.Quelle, &r.Bewertung, &gekocht)
+		&r.Hinweise, &r.Quelle, &r.Bewertung, &gekocht, &r.Gruppe, &r.Kueche)
 	if err != nil {
 		return r, err
 	}
@@ -99,18 +99,18 @@ func (a *Ablage) SpeichereRezept(r Rezept) (Rezept, error) {
 	}
 	werte := []any{r.Titel, r.Beschreibung, r.Portionen, r.DauerMin, r.Art, r.Kost, r.Aufwand,
 		pq.Array([]string(r.Saison)), pq.Array([]string(r.Etiketten)), zutaten, schritte, r.Hinweise, r.Quelle,
-		r.Bewertung, gekocht}
+		r.Bewertung, gekocht, r.Gruppe, r.Kueche}
 	if r.ID == 0 {
 		return leseRezept(a.db.QueryRow(`INSERT INTO rezepte
 			(titel, beschreibung, portionen, dauer_min, art, kost, aufwand, saison, etiketten,
-			 zutaten, schritte, hinweise, quelle, bewertung, zuletzt_gekocht)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+			 zutaten, schritte, hinweise, quelle, bewertung, zuletzt_gekocht, gruppe, kueche)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 			RETURNING `+rezeptSpalten, werte...))
 	}
 	return leseRezept(a.db.QueryRow(`UPDATE rezepte SET titel=$1, beschreibung=$2, portionen=$3,
 		dauer_min=$4, art=$5, kost=$6, aufwand=$7, saison=$8, etiketten=$9, zutaten=$10,
-		schritte=$11, hinweise=$12, quelle=$13, bewertung=$14, zuletzt_gekocht=$15
-		WHERE id=$16 RETURNING `+rezeptSpalten, append(werte, r.ID)...))
+		schritte=$11, hinweise=$12, quelle=$13, bewertung=$14, zuletzt_gekocht=$15, gruppe=$16, kueche=$17
+		WHERE id=$18 RETURNING `+rezeptSpalten, append(werte, r.ID)...))
 }
 
 // Fuellt fehlende Angaben mit brauchbaren Vorgaben, damit die KI und die
@@ -119,6 +119,8 @@ func ordne(r *Rezept) {
 	r.Art = einerVon(r.Art, "hauptgericht", "beilage", "fruehstueck", "nachtisch")
 	r.Kost = einerVon(r.Kost, "vegan", "vegetarisch", "fisch", "fleisch")
 	r.Aufwand = einerVon(r.Aufwand, "schnell", "mittel", "aufwendig")
+	r.Gruppe = einerVon(r.Gruppe, Gruppen...)
+	r.Kueche = einerVon(r.Kueche, Kuechen...)
 	if r.Portionen <= 0 {
 		r.Portionen = 2
 	}
@@ -426,9 +428,9 @@ func (a *Ablage) AnzahlRezepte() int {
 // einerVon laesst nur bekannte Werte durch; alles andere wird leer und
 // bekommt in ordne() die Vorgabe.
 func einerVon(wert string, erlaubt ...string) string {
-	w := strings.ToLower(strings.TrimSpace(wert))
+	w := strings.TrimSpace(wert)
 	for _, e := range erlaubt {
-		if w == e {
+		if strings.EqualFold(w, e) {
 			return e
 		}
 	}

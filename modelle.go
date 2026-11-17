@@ -21,6 +21,8 @@ type Rezept struct {
 	Aufwand        string   `json:"aufwand"` // schnell, mittel, aufwendig
 	Saison         Liste    `json:"saison"`
 	Etiketten      Liste    `json:"etiketten"`
+	Gruppe         string   `json:"gruppe"` // eine aus Gruppen
+	Kueche         string   `json:"kueche"` // eine aus Kuechen
 	Zutaten        []Zutat  `json:"zutaten"`
 	Schritte       []string `json:"schritte"`
 	Hinweise       string   `json:"hinweise"`
