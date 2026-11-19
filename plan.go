@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -58,6 +59,11 @@ type kandidat struct {
 type Planer struct {
 	ablage *Ablage
 	ki     *KI
+
+	// gezeigt merkt sich je Tag, was beim Tauschen schon kam: sonst pendelt
+	// der Knopf zwischen zwei Gerichten, weil das alte wieder frei ist.
+	gezeigtMu sync.Mutex
+	gezeigt   map[int][]int
 }
 
 func (p *Planer) Erzeuge(ctx context.Context, auf Auftrag) (*Plan, string, error) {
@@ -239,14 +245,43 @@ func (p *Planer) TauscheTag(tagID int, plan *Plan) (*Plan, error) {
 	if tag == "" {
 		return nil, fmt.Errorf("Tag gehoert nicht zu diesem Plan")
 	}
-	// Auch das alte Rezept ist gesperrt, sonst kommt dasselbe wieder.
+	// Auch das alte Rezept und alles, was an diesem Tag schon kam, ist
+	// gesperrt; erst wenn nichts mehr übrig ist, beginnt die Runde von vorn.
+	p.gezeigtMu.Lock()
+	if p.gezeigt == nil {
+		p.gezeigt = map[int][]int{}
+	}
 	for _, t := range plan.Tage {
 		if t.ID == tagID && t.RezeptID != 0 {
-			belegt[t.RezeptID] = true
+			p.gezeigt[tagID] = append(p.gezeigt[tagID], t.RezeptID)
 		}
 	}
+	if len(p.gezeigt[tagID]) > 60 {
+		p.gezeigt[tagID] = p.gezeigt[tagID][len(p.gezeigt[tagID])-60:]
+	}
+	schon := append([]int{}, p.gezeigt[tagID]...)
+	p.gezeigtMu.Unlock()
+	gesperrt := map[int]bool{}
+	for k, v := range belegt {
+		gesperrt[k] = v
+	}
+	for _, id := range schon {
+		gesperrt[id] = true
+	}
 	rang := bewerte(rezepte, kuerzlich)
-	r := naechstbestes(rezepte, rang, belegt, werktag(tag))
+	r := tauschWahl(rezepte, rang, gesperrt, werktag(tag))
+	if r == nil {
+		// Alles schon gezeigt: nur das aktuelle und die übrigen Tage sperren.
+		p.gezeigtMu.Lock()
+		p.gezeigt[tagID] = schon[len(schon)-1:]
+		p.gezeigtMu.Unlock()
+		for _, t := range plan.Tage {
+			if t.ID == tagID && t.RezeptID != 0 {
+				belegt[t.RezeptID] = true
+			}
+		}
+		r = tauschWahl(rezepte, rang, belegt, werktag(tag))
+	}
 	if r == nil {
 		return nil, fmt.Errorf("kein anderes Rezept uebrig")
 	}
@@ -298,6 +333,38 @@ func bewerte(rezepte []Rezept, kuerzlich map[int]string) map[int]float64 {
 		rang[r.ID] = punkte
 	}
 	return rang
+}
+
+// tauschWahl nimmt zufällig eines der zwölf besten freien Rezepte: beim
+// Tauschen soll Abwechslung kommen, nicht immer das eine Nächstbeste.
+func tauschWahl(rezepte []Rezept, rang map[int]float64, belegt map[int]bool, istWerktag bool) *Rezept {
+	type paar struct {
+		r *Rezept
+		p float64
+	}
+	var l []paar
+	for i := range rezepte {
+		r := &rezepte[i]
+		if belegt[r.ID] {
+			continue
+		}
+		p := rang[r.ID]
+		if istWerktag && r.DauerMin > 45 {
+			p -= 25
+		}
+		if !istWerktag && r.Aufwand == "aufwendig" {
+			p += 10
+		}
+		l = append(l, paar{r, p})
+	}
+	if len(l) == 0 {
+		return nil
+	}
+	sort.Slice(l, func(i, j int) bool { return l[i].p > l[j].p })
+	if len(l) > 12 {
+		l = l[:12]
+	}
+	return l[rand.Intn(len(l))].r
 }
 
 func naechstbestes(rezepte []Rezept, rang map[int]float64, belegt map[int]bool, istWerktag bool) *Rezept {
