@@ -238,7 +238,7 @@ input.feld { border-radius: 999px; }
 .kal-tag.fremd { opacity: .4; }
 .kal-tag.leer-tag { background: color-mix(in srgb, var(--flaeche2) 45%, transparent); }
 .kal-tag .zahl { font-size: 13px; font-weight: 600; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; margin: -3px 0 0 -3px; }
-.kal-tag.heute .zahl { background: var(--akzent); color: #fff; }
+.kal-tag.jetzt .zahl { background: var(--akzent); color: #fff; }
 .kal-tag.gewaehlt { box-shadow: 0 0 0 2px var(--akzent); }
 .kal-tag .gericht { font-size: 12.5px; line-height: 1.3; font-weight: 500; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 .kal-tag.gekocht .gericht { color: var(--leise); text-decoration: line-through; }
@@ -261,6 +261,23 @@ input.feld { border-radius: 999px; }
   .kal-tag .punkt { position: static; margin-top: 2px; }
 }
 @media (prefers-reduced-motion: reduce) { .kal-tag { transition: none; } }
+
+/* Wochenleiste */
+.kopfzeile .woche { align-items: center; }
+.woche button { display: inline-grid; place-items: center; min-width: 30px; height: 28px; }
+.woche button svg { width: 16px; height: 16px; }
+.woche #wochenName { padding: 0 12px; white-space: nowrap; }
+.wleiste { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 10px; margin-bottom: 14px; }
+.wleiste .kal-tag { min-height: 104px; }
+.wleiste .wt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--leise); }
+.wleiste .zahl { margin: 0 0 2px -3px; }
+@media (max-width: 640px) {
+  .wleiste { gap: 4px; padding: 8px; }
+  .wleiste .kal-tag { min-height: 64px; align-items: center; padding: 6px 2px; }
+  .wleiste .gericht { display: none; }
+  .wleiste .zahl { margin: 0; }
+  .wleiste .punkt { position: static; }
+}
 </style>
 </head>
 <body>
@@ -269,9 +286,10 @@ input.feld { border-radius: 999px; }
     <div class="kopfzeile">
       <img src="/favicon.svg" alt="">
       <h1>Foodr</h1>
-      <div class="woche" role="group" aria-label="Woche">
-        <button data-woche="0" class="an">Diese Woche</button>
-        <button data-woche="7">Nächste</button>
+      <div class="woche" role="group" aria-label="Woche wählen">
+        <button data-wochenschritt="-7" aria-label="Vorige Woche" title="Vorige Woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button data-wochenschritt="0" id="wochenName" class="an" title="Zur aktuellen Woche">Diese Woche</button>
+        <button data-wochenschritt="7" aria-label="Nächste Woche" title="Nächste Woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
       <a class="ganz" href="/" target="_blank" rel="noopener" title="Das ganze Foodr in einem neuen Tab">Ganzes Foodr<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>
     </div>
@@ -350,6 +368,13 @@ function montag(versatz = 0) {
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + versatz);
   return d.toISOString().slice(0, 10);
 }
+function wochenNameSetzen() {
+  const v = zustand.versatz; const b = $('#wochenName'); if (!b) return;
+  const mo = datum(montag(v)); const so = new Date(mo); so.setDate(mo.getDate() + 6);
+  const kurz = (d) => d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+  b.textContent = v === 0 ? 'Diese Woche' : v === 7 ? 'Nächste Woche' : v === -7 ? 'Letzte Woche' : `${kurz(mo)} bis ${kurz(so)}`;
+  b.classList.toggle('an', v === 0);
+}
 const heuteIso = () => { const d = new Date(); d.setHours(12); return d.toISOString().slice(0, 10); };
 const datum = (iso) => new Date(iso + 'T12:00:00');
 
@@ -419,9 +444,15 @@ function zeigeWoche() {
       ${zustand.offen.has(tagHeute.id) ? details(r) : ''}
     </section>`;
   }
+  html += `<section class="karte wleiste">${rest.map((t) => {
+    const r = t.rezept; const d = datum(t.tag);
+    return `<button class="kal-tag ${t.tag === heute ? 'jetzt' : ''} ${t.gekocht ? 'gekocht' : ''} ${r ? '' : 'leer-tag'}" data-springe="${t.id}" aria-label="${TAGNAME[d.getDay()]}${r ? ': ' + esc(r.titel) : ''}">
+      <span class="wt">${KURZ[d.getDay()]}</span><span class="zahl">${d.getDate()}</span>
+      ${r ? `<span class="punkt ${esc(r.kost)}"></span><span class="gericht">${esc(r.titel)}</span>` : ''}</button>`;
+  }).join('')}</section>`;
   html += `<div class="tage">${rest.map((t) => {
     const r = t.rezept; const d = datum(t.tag); const arbeitet = zustand.arbeitet.has(t.id);
-    return `<article class="karte tag ${t.gekocht ? 'gekocht' : ''} ${t.tag === heute ? 'heute-markiert' : ''}">
+    return `<article id="tag-${t.id}" class="karte tag ${t.gekocht ? 'gekocht' : ''} ${t.tag === heute ? 'heute-markiert' : ''}">
       <div class="datum"><b>${KURZ[d.getDay()]}</b><span>${d.getDate()}</span></div>
       <div><div class="name">${esc(r ? r.titel : 'nichts geplant')}</div>${chips(r)}
         ${arbeitet ? '<span class="denkt">wird ausgetauscht …</span>' : ''}</div>
@@ -714,7 +745,7 @@ function zeigeKalender() {
     <div class="kal-raster">${['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((w) => `<div class="kal-wt">${w}</div>`).join('')}
     ${m.tage.map((d) => {
       const k = iso(d); const t = nach[k]; const r = t?.rezept;
-      const kl = ['kal-tag', d.getMonth() !== m.erster.getMonth() ? 'fremd' : '', k === heute ? 'heute' : '', k === wahl ? 'gewaehlt' : '',
+      const kl = ['kal-tag', d.getMonth() !== m.erster.getMonth() ? 'fremd' : '', k === heute ? 'jetzt' : '', k === wahl ? 'gewaehlt' : '',
         t?.gekocht ? 'gekocht' : '', r ? '' : 'leer-tag'].filter(Boolean).join(' ');
       return `<button class="${kl}" data-kaltag="${k}" aria-label="${d.getDate()}. ${MONATE[d.getMonth()]}${r ? ': ' + esc(r.titel) : ''}">
         <span class="zahl">${d.getDate()}</span>${r ? `<span class="punkt ${esc(r.kost)}"></span><span class="gericht">${esc(r.titel)}</span>` : ''}</button>`;
@@ -759,11 +790,13 @@ document.addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.reiter) return wechsle(b.dataset.reiter);
   if (b.dataset.gehe) return wechsle(b.dataset.gehe);
-  if (b.dataset.woche !== undefined) {
-    zustand.versatz = Number(b.dataset.woche);
-    $$('[data-woche]').forEach((x) => x.classList.toggle('an', x === b));
+  if (b.dataset.wochenschritt !== undefined) {
+    const n = Number(b.dataset.wochenschritt); zustand.versatz = n === 0 ? 0 : zustand.versatz + n;
+    wochenNameSetzen();
+    if (zustand.reiter !== 'woche' && zustand.reiter !== 'einkauf') wechsle('woche');
     await ladePlan(); return zeige();
   }
+  if (b.dataset.springe) { const el = document.getElementById('tag-' + b.dataset.springe); if (el) { zustand.offen.add(Number(b.dataset.springe)); zeige(); document.getElementById('tag-' + b.dataset.springe)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
   if (b.dataset.monat !== undefined) {
     const n = Number(b.dataset.monat); zustand.monat = n === 0 ? 0 : zustand.monat + n;
     if (n === 0) zustand.kalTag = heuteIso();
