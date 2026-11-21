@@ -190,6 +190,40 @@ h2 { font-size: 15px; margin: 0 0 10px; }
 .meldung { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--tinte); color: var(--grund);
            padding: 9px 16px; border-radius: 999px; font-size: 14px; z-index: 20; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
 .leer { padding: 28px; text-align: center; color: var(--leise); }
+
+/* Weiche Formen: runde Ecken, keine harten Linien, Flächen statt Rahmen */
+:root { --schatten: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06); --linie-weich: color-mix(in srgb, var(--linie) 60%, transparent); }
+@media (prefers-color-scheme: dark) { :root { --schatten: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); } }
+.kopf { border-bottom: 0; }
+.kopf-innen { padding-bottom: 10px; }
+.reiter { gap: 4px; }
+.reiter button { border-bottom: 0; border-radius: 999px; padding: 7px 14px; }
+.reiter button:hover { background: var(--flaeche2); color: var(--tinte); }
+.reiter button.an { background: var(--akzent-hell); color: var(--akzent); }
+.karte { border-color: transparent; border-radius: 24px; }
+.heute { border-radius: 28px; padding: 24px; }
+.tag { border-radius: 22px; padding: 12px 16px; }
+.tag.heute-markiert { border-color: transparent; box-shadow: 0 0 0 2px var(--akzent), var(--schatten); }
+.details { border-top: 1px solid var(--linie-weich); }
+.knopf { border-radius: 999px; padding: 8px 16px; border-color: var(--linie-weich); background: var(--flaeche2); }
+.knopf:hover { background: color-mix(in srgb, var(--flaeche2) 70%, var(--tinte) 8%); }
+.heute .knopf { background: var(--flaeche); }
+.symbolknopf { border-radius: 50%; }
+.feld { border-radius: 18px; border-color: var(--linie-weich); background: var(--flaeche2); padding: 10px 16px; }
+input.feld { border-radius: 999px; }
+.chip, .filter button, .wahl, .wahl label, .vorschlaege button { border-color: var(--linie-weich); }
+.rezept select { border-radius: 999px; padding: 6px 12px; border-color: var(--linie-weich); }
+.karte.gruppe { transition: transform .15s ease, box-shadow .15s ease; }
+.karte.gruppe:hover { border-color: transparent; transform: translateY(-2px); box-shadow: 0 2px 6px rgba(0,0,0,.06), 0 14px 32px rgba(0,0,0,.09); }
+@media (prefers-reduced-motion: reduce) { .karte.gruppe:hover { transform: none; } }
+.blase { border-radius: 22px; }
+.blase.ich { border-bottom-right-radius: 8px; }
+.blase.ki { border-color: transparent; box-shadow: var(--schatten); border-bottom-left-radius: 8px; }
+.lm-bild { border-radius: 14px; }
+.lm > li, .posten li { border-bottom-color: var(--linie-weich); }
+.lm-zeile { border-radius: 18px; }
+.naehr td { border-bottom-color: var(--linie-weich); }
+.posten input { border-radius: 50%; }
 </style>
 </head>
 <body>
