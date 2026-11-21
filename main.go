@@ -60,7 +60,7 @@ func main() {
 	// fuer deren Wege, und die Seite der Ansicht selbst, die keine Daten traegt.
 	dienst.sso.Durchlass = func(r *http.Request) bool {
 		return (dienst.kennwort != "" && gleich(r.Header.Get("X-Foodr"), dienst.kennwort)) ||
-			dienst.kuechenSchluesselPasst(r) || kuechenSeite(r)
+			dienst.kuechenSchluesselPasst(r) || dienst.kalenderSchluesselPasst(r) || kuechenSeite(r)
 	}
 	offAdresse := umgebung("FOODR_OFF_ADRESSE", offAdresse)
 	if umgebung("FOODR_OFF", "an") == "an" {

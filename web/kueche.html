@@ -224,6 +224,43 @@ input.feld { border-radius: 999px; }
 .lm-zeile { border-radius: 18px; }
 .naehr td { border-bottom-color: var(--linie-weich); }
 .posten input { border-radius: 50%; }
+
+/* Kalender */
+.kal { padding: 18px; }
+.kal-kopf { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.kal-kopf h2 { margin: 0 auto 0 4px; font-size: 20px; letter-spacing: -.01em; }
+.kal-kopf .knopf { padding: 6px 14px; }
+.kal-raster { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.kal-wt { text-align: center; font-size: 12px; font-weight: 600; color: var(--leise); text-transform: uppercase; letter-spacing: .05em; padding-bottom: 4px; }
+.kal-tag { position: relative; min-height: 92px; border: 0; border-radius: 18px; background: var(--flaeche2); padding: 8px 9px; text-align: left;
+           display: flex; flex-direction: column; gap: 4px; color: inherit; transition: transform .12s ease, background .12s ease; }
+.kal-tag:hover { background: color-mix(in srgb, var(--flaeche2) 80%, var(--akzent) 10%); }
+.kal-tag.fremd { opacity: .4; }
+.kal-tag.leer-tag { background: color-mix(in srgb, var(--flaeche2) 45%, transparent); }
+.kal-tag .zahl { font-size: 13px; font-weight: 600; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; margin: -3px 0 0 -3px; }
+.kal-tag.heute .zahl { background: var(--akzent); color: #fff; }
+.kal-tag.gewaehlt { box-shadow: 0 0 0 2px var(--akzent); }
+.kal-tag .gericht { font-size: 12.5px; line-height: 1.3; font-weight: 500; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.kal-tag.gekocht .gericht { color: var(--leise); text-decoration: line-through; }
+.kal-tag .punkt { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--leise); }
+.punkt.vegan, .punkt.vegetarisch { background: var(--gut); }
+.punkt.fisch { background: #4a82c4; }
+.punkt.fleisch { background: var(--akzent); }
+.kal-legende { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--leise); }
+.kal-legende span { display: inline-flex; align-items: center; gap: 6px; }
+.kal-legende .punkt { position: static; display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.kal-auswahl { margin-top: 14px; padding: 20px; display: grid; gap: 10px; }
+.kal-auswahl .tagname { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--akzent); }
+.kal-auswahl .titel { font-size: 22px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
+@media (max-width: 640px) {
+  .kal { padding: 12px; }
+  .kal-raster { gap: 4px; }
+  .kal-tag { min-height: 54px; border-radius: 14px; padding: 6px; align-items: center; }
+  .kal-tag .gericht { display: none; }
+  .kal-tag .zahl { margin: 0; }
+  .kal-tag .punkt { position: static; margin-top: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { .kal-tag { transition: none; } }
 </style>
 </head>
 <body>
@@ -240,6 +277,7 @@ input.feld { border-radius: 999px; }
     </div>
     <nav class="reiter" role="tablist">
       <button data-reiter="woche" class="an"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Woche</button>
+      <button data-reiter="kalender"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="4"/><path d="M8 3v4M16 3v4"/><circle cx="8.5" cy="12" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/><circle cx="15.5" cy="12" r=".9" fill="currentColor"/><circle cx="8.5" cy="16" r=".9" fill="currentColor"/><circle cx="12" cy="16" r=".9" fill="currentColor"/></svg>Kalender</button>
       <button data-reiter="rezepte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>Rezepte</button>
       <button data-reiter="planen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Planen</button>
       <button data-reiter="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Chat</button>
@@ -267,7 +305,7 @@ const SYM = {
   senden: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>',
 };
 
-const zustand = { reiter: 'woche', versatz: 0, plan: null, rezepte: null, offen: new Set(), wunschFuer: null,
+const zustand = { reiter: 'woche', versatz: 0, monat: 0, kal: null, kalTag: null, plan: null, rezepte: null, offen: new Set(), wunschFuer: null,
                   arbeitet: new Set(), suche: '', kost: '', gruppe: '', kueche: '', chat: lesen('foodr-chat', []), regeln: null };
 
 function lesen(k, v) { try { return JSON.parse(sessionStorage.getItem(k)) ?? v; } catch { return v; } }
@@ -642,10 +680,67 @@ function zeigeLebensmittel() {
   if (fokus) { const f = $('#lmFeld'); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
 }
 
+// ------------------------------------------------------------ Kalender --
+
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const iso = (d) => { const x = new Date(d); x.setHours(12, 0, 0, 0); return x.toISOString().slice(0, 10); };
+
+function monatsRaster() {
+  const erster = new Date(); erster.setHours(12, 0, 0, 0); erster.setDate(1); erster.setMonth(erster.getMonth() + zustand.monat);
+  const start = new Date(erster); start.setDate(1 - ((erster.getDay() + 6) % 7));
+  const letzter = new Date(erster.getFullYear(), erster.getMonth() + 1, 0, 12);
+  const ende = new Date(letzter); ende.setDate(letzter.getDate() + (6 - ((letzter.getDay() + 6) % 7)));
+  const tage = []; for (let d = new Date(start); d <= ende; d.setDate(d.getDate() + 1)) tage.push(new Date(d));
+  return { erster, tage, von: iso(start), bis: iso(ende) };
+}
+
+async function ladeKalender() {
+  const m = monatsRaster();
+  const tage = await ruf(`/api/kalender?von=${m.von}&bis=${m.bis}`).catch(() => []);
+  zustand.kal = { schluessel: m.von, nachTag: Object.fromEntries((tage || []).map((t) => [t.tag, t])) };
+}
+
+function zeigeKalender() {
+  const m = monatsRaster(); const heute = heuteIso();
+  const nach = zustand.kal?.nachTag || {};
+  const wahl = zustand.kalTag || heute;
+  let html = `<section class="karte kal">
+    <div class="kal-kopf">
+      <h2>${MONATE[m.erster.getMonth()]} ${m.erster.getFullYear()}</h2>
+      <button class="symbolknopf" data-monat="-1" aria-label="Voriger Monat" title="Voriger Monat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="knopf" data-monat="0">Heute</button>
+      <button class="symbolknopf" data-monat="1" aria-label="Nächster Monat" title="Nächster Monat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="kal-raster">${['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((w) => `<div class="kal-wt">${w}</div>`).join('')}
+    ${m.tage.map((d) => {
+      const k = iso(d); const t = nach[k]; const r = t?.rezept;
+      const kl = ['kal-tag', d.getMonth() !== m.erster.getMonth() ? 'fremd' : '', k === heute ? 'heute' : '', k === wahl ? 'gewaehlt' : '',
+        t?.gekocht ? 'gekocht' : '', r ? '' : 'leer-tag'].filter(Boolean).join(' ');
+      return `<button class="${kl}" data-kaltag="${k}" aria-label="${d.getDate()}. ${MONATE[d.getMonth()]}${r ? ': ' + esc(r.titel) : ''}">
+        <span class="zahl">${d.getDate()}</span>${r ? `<span class="punkt ${esc(r.kost)}"></span><span class="gericht">${esc(r.titel)}</span>` : ''}</button>`;
+    }).join('')}</div>
+    <div class="kal-legende"><span><i class="punkt vegetarisch"></i>vegetarisch/vegan</span><span><i class="punkt fisch"></i>Fisch</span><span><i class="punkt fleisch"></i>Fleisch</span></div>
+  </section>`;
+  const t = nach[wahl]; const d = datum(wahl);
+  html += `<section class="karte kal-auswahl">
+    <div class="tagname">${wahl === heute ? 'Heute, ' : ''}${TAGNAME[d.getDay()]}, ${d.getDate()}. ${MONATE[d.getMonth()]}</div>
+    ${t?.rezept ? `<p class="titel">${esc(t.rezept.titel)}</p>${chips(t.rezept)}
+      ${t.hinweis ? `<p class="leise klein" style="margin:0">${esc(t.hinweis)}</p>` : ''}
+      <div class="aktionen" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="knopf ${t.gekocht ? 'gut' : ''}" data-kalgekocht="${t.id}" data-planwoche="${t.woche}" data-wert="${!t.gekocht}">${SYM.haken}${t.gekocht ? 'Gekocht' : 'Als gekocht markieren'}</button>
+        <button class="knopf" data-kalauf="${t.id}">${SYM.auf}${zustand.offen.has('k' + t.id) ? 'Rezept zuklappen' : 'Rezept'}</button>
+      </div>
+      ${zustand.offen.has('k' + t.id) ? details(t.rezept) : ''}`
+    : `<p class="leise" style="margin:0">Für diesen Tag ist nichts geplant.</p>`}
+  </section>`;
+  $('#inhalt').innerHTML = html;
+}
+
 // ------------------------------------------------------------- Rahmen --
 
 async function zeige() {
   if (zustand.reiter === 'woche') zeigeWoche();
+  else if (zustand.reiter === 'kalender') { if (!zustand.kal || zustand.kal.schluessel !== monatsRaster().von) await ladeKalender(); zeigeKalender(); }
   else if (zustand.reiter === 'rezepte') { await ladeRezepte(); zeigeRezepte(); }
   else if (zustand.reiter === 'planen') await zeigePlanen();
   else if (zustand.reiter === 'chat') zeigeChat();
@@ -668,6 +763,17 @@ document.addEventListener('click', async (e) => {
     zustand.versatz = Number(b.dataset.woche);
     $$('[data-woche]').forEach((x) => x.classList.toggle('an', x === b));
     await ladePlan(); return zeige();
+  }
+  if (b.dataset.monat !== undefined) {
+    const n = Number(b.dataset.monat); zustand.monat = n === 0 ? 0 : zustand.monat + n;
+    if (n === 0) zustand.kalTag = heuteIso();
+    await ladeKalender(); return zeigeKalender();
+  }
+  if (b.dataset.kaltag) { zustand.kalTag = b.dataset.kaltag; return zeigeKalender(); }
+  if (b.dataset.kalauf) { const id = 'k' + b.dataset.kalauf; zustand.offen.has(id) ? zustand.offen.delete(id) : zustand.offen.add(id); return zeigeKalender(); }
+  if (b.dataset.kalgekocht) {
+    await ruf(`/api/plan/tag/${b.dataset.kalgekocht}/gekocht`, 'POST', { gekocht: b.dataset.wert === 'true', woche: b.dataset.planwoche }).catch((f) => melden(f.message));
+    await ladePlan(); await ladeKalender(); return zeigeKalender();
   }
   if (b.dataset.tauschen) return tauschen(Number(b.dataset.tauschen));
   if (b.dataset.erfinden) { const id = Number(b.dataset.erfinden); zustand.wunschFuer = zustand.wunschFuer === id ? null : id; zeige(); $(`[data-wunsch="${id}"] input`)?.focus(); return; }

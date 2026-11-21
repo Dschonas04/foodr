@@ -51,7 +51,7 @@ func (d *Dienst) kuechenSchluesselPasst(r *http.Request) bool {
 func kuechenWeg(r *http.Request) bool {
 	p, m := r.URL.Path, r.Method
 	switch {
-	case m == http.MethodGet && (p == "/api/plan" || p == "/api/rezepte" || p == "/api/regeln" || p == "/api/lebensmittel"):
+	case m == http.MethodGet && (p == "/api/plan" || p == "/api/kalender" || p == "/api/rezepte" || p == "/api/regeln" || p == "/api/lebensmittel"):
 		return true
 	case m == http.MethodGet && strings.HasPrefix(p, "/api/lebensmittel/") && !strings.ContainsRune(p[len("/api/lebensmittel/"):], '/'):
 		return true

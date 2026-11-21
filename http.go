@@ -58,6 +58,8 @@ func (d *Dienst) Wege(web http.Handler) http.Handler {
 	m.HandleFunc("POST /api/rezepte/erfinden", d.geschuetzt(d.rezeptErfinden))
 
 	m.HandleFunc("GET /api/plan", d.geschuetzt(d.plan))
+	m.HandleFunc("GET /api/kalender", d.geschuetzt(d.kalender))
+	m.HandleFunc("GET /api/kalender.ics", d.geschuetzt(d.kalenderICS))
 	m.HandleFunc("POST /api/plan/erzeugen", d.geschuetzt(d.planErzeugen))
 	m.HandleFunc("PUT /api/plan/tag/{id}", d.geschuetzt(d.tagSetzen))
 	m.HandleFunc("POST /api/plan/tag/{id}/tauschen", d.geschuetzt(d.tagTauschen))
@@ -115,6 +117,9 @@ func (d *Dienst) erlaubt(r *http.Request) bool {
 		return true
 	}
 	if d.kuechenSchluesselPasst(r) {
+		return true
+	}
+	if d.kalenderSchluesselPasst(r) {
 		return true
 	}
 	if k, err := r.Cookie("foodr"); err == nil && gleich(k.Value, d.merkmal()) {
