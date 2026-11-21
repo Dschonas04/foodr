@@ -105,8 +105,14 @@ func (d *Dienst) kalenderSchluesselPasst(r *http.Request) bool {
 
 // icsText maskiert nach RFC 5545 und faltet lange Zeilen.
 func icsText(s string) string {
-	s = strings.NewReplacer(`\`, `\\`, ";", `\;`, ",", `\,`, "\r\n", `\n`, "\n", `\n`).Replace(s)
-	return s
+	s = strings.NewReplacer(`\`, `\\`, ";", `\;`, ",", `\,`, "\r\n", `\n`, "\r", `\n`, "\n", `\n`).Replace(s)
+	// uebrige Steuerzeichen raus, damit kein Text eine eigene Eigenschaft anfaengt
+	return strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f || r == 0x2028 || r == 0x2029 {
+			return -1
+		}
+		return r
+	}, s)
 }
 
 func icsZeile(b *strings.Builder, schluessel, wert string) {
