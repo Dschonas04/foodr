@@ -1,5 +1,11 @@
 # Foodr
 
+[![prüfen](https://github.com/Dschonas04/foodr/actions/workflows/pruefen.yml/badge.svg)](https://github.com/Dschonas04/foodr/actions/workflows/pruefen.yml)
+[![Release](https://img.shields.io/github/v/release/Dschonas04/foodr?label=Version)](https://github.com/Dschonas04/foodr/releases/latest)
+[![Go 1.27](https://img.shields.io/badge/Go-1.27-00ADD8)](https://go.dev)
+[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1)](https://www.postgresql.org)
+[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
+
 <img src="docs/logo.svg" alt="" width="96" align="right">
 
 Essensplaner mit Lebensmitteldatenbank für den eigenen Haushalt, als
