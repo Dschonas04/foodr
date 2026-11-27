@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Foodr Küche</title>
-<link rel="icon" href="/favicon.svg">
+<link rel="icon" href="favicon.svg">
 <style>
 :root {
   --grund: #f6f5f2; --flaeche: #ffffff; --flaeche2: #efede8; --tinte: #2f2d29; --leise: #85827b;
@@ -306,7 +306,7 @@ input.feld { border-radius: 999px; }
       <button class="symbolknopf" data-wochenschritt="-1" aria-label="Zurück" title="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
       <button data-wochenschritt="0" id="wochenName" title="Zurück zu heute">Diese Woche</button>
       <button class="symbolknopf" data-wochenschritt="1" aria-label="Weiter" title="Weiter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
-      <a class="symbolknopf" href="/" target="_blank" rel="noopener" title="Das ganze Foodr in einem neuen Tab" aria-label="Ganzes Foodr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>
+      <a class="symbolknopf" id="ganzesFoodr" href="/" target="_blank" rel="noopener" title="Das ganze Foodr in einem neuen Tab" aria-label="Ganzes Foodr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>
     </div>
   </div>
 </header>
@@ -347,7 +347,16 @@ const SCHLUESSEL = (() => {
   try { return sessionStorage.getItem('foodr-kueche-k') || ''; } catch { return ''; }
 })();
 
+// Eingebettet unter fremdem Pfad (etwa /foodr/ hinter dem Proxy von Home
+// Assistant) gehen alle Aufrufe unter diesen Pfad, die volle App liegt dann am
+// eigenen Port.
+const BASIS = location.pathname.replace(/\/kueche(\.html)?$/, '');
+const GANZ = BASIS ? `${location.protocol}//${location.hostname}:8300/` : '/';
+document.getElementById('ganzesFoodr')?.setAttribute('href', GANZ);
+const mitBasis = (u) => (typeof u === 'string' && u.startsWith('/') && !u.startsWith('//') ? BASIS + u : u);
+
 async function ruf(pfad, methode = 'GET', rumpf) {
+  pfad = mitBasis(pfad);
   const kopf = rumpf ? { 'Content-Type': 'application/json' } : {};
   if (SCHLUESSEL) kopf['X-Foodr-Kueche'] = SCHLUESSEL;
   const r = await fetch(pfad, { method: methode, credentials: 'include', headers: kopf, body: rumpf ? JSON.stringify(rumpf) : undefined });
@@ -361,7 +370,7 @@ async function ruf(pfad, methode = 'GET', rumpf) {
 function zeigeAbgemeldet() {
   $('#inhalt').innerHTML = `<div class="karte leer"><p>Foodr kennt diese Ansicht nicht.</p>
     <p class="klein">Öffne sie über die Adresse mit Schlüssel (in Home Assistant hinterlegt) oder melde dich in einem eigenen Tab an.</p>
-    <a class="knopf" href="/" target="_blank" rel="noopener">Foodr in neuem Tab öffnen</a></div>`;
+    <a class="knopf" href="${GANZ}" target="_blank" rel="noopener">Foodr in neuem Tab öffnen</a></div>`;
 }
 
 function melden(text) {
@@ -695,7 +704,7 @@ function zeigeLebensmittel() {
       <span class="leise klein" style="align-self:center;margin-left:6px">${lm.q.trim().length < 2 ? 'rund 3,4 Millionen Einträge' : lm.laedt && !lm.treffer.length ? '' : `${zahl(lm.gesamt, 0)} Treffer`}</span></div>
     ${lm.laedt && !lm.treffer.length ? '<span class="denkt">sucht …</span>' : lm.treffer.length ? `<ul class="karte lm">${lm.treffer.map((x) => { const k = x.kern || {}; return `<li>
       <button class="lm-zeile" data-lm="${esc(x.id)}">
-        ${x.bild ? `<img class="lm-bild" src="${esc(x.bild)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.removeAttribute('src')">` : `<span class="lm-bild">${x.quelle === 'bls' ? 'BLS' : ''}</span>`}
+        ${x.bild ? `<img class="lm-bild" src="${esc(mitBasis(x.bild))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.removeAttribute('src')">` : `<span class="lm-bild">${x.quelle === 'bls' ? 'BLS' : ''}</span>`}
         <span><span class="lm-name">${esc(x.name)}</span>${x.marke ? ` <span class="leise klein">${esc(x.marke)}</span>` : ''}
           <span class="makros"><span>Eiweiß <b>${zahl(k.PROT625)} g</b></span><span>Fett <b>${zahl(k.FAT)} g</b></span><span>KH <b>${zahl(k.CHO)} g</b></span>${k.SUGAR != null ? `<span>Zucker <b>${zahl(k.SUGAR)} g</b></span>` : ''}</span></span>
         <span class="lm-kcal">${zahl(k.ENERCC, 0)}<small>kcal</small></span></button>

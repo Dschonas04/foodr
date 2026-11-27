@@ -77,11 +77,15 @@ func kuechenSeite(r *http.Request) bool {
 func (d *Dienst) kuecheOeffnen(w http.ResponseWriter, r *http.Request) {
 	// Der Schluessel wandert in den Anker: der geht an keinen Server und in
 	// kein Protokoll; die Seite merkt ihn sich und raeumt die Adresse auf.
-	ziel := "/kueche.html"
+	// Relativ, damit es auch unter einem fremden Pfad (/foodr/kueche) passt.
+	ziel := "kueche.html"
 	if d.kuechenSchluesselPasst(r) {
 		ziel += "#k=" + d.kuechenSchluessel()
 	}
-	http.Redirect(w, r, ziel, http.StatusFound)
+	// Selbst setzen: http.Redirect machte daraus wieder einen absoluten Pfad.
+	w.Header().Set("Location", ziel)
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusFound)
 }
 
 // ---------- Neues Rezept auf Zuruf ----------
