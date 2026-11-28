@@ -13,6 +13,21 @@ Webanwendung. Rezepte wandern in einen Pool, ein lokales Sprachmodell (Ollama)
 wählt daraus die Woche aus, Foodr rechnet Einkaufsliste und Nährwerte. Nichts
 davon verlässt das eigene Netz.
 
+![Foodr in zwanzig Sekunden: der Wochenplan, ein Rezept mit Nährwerten, die Einkaufsliste und die Suche in der Lebensmitteldatenbank](docs/bilder/rundgang.gif)
+
+*Zwanzig Sekunden: Wochenplan ansehen, ein Rezept öffnen, auf der
+Einkaufsliste abhaken und in 7.140 Lebensmitteln nach Kürbis suchen.*
+
+| Die Woche | Ein Rezept | Der Einkauf |
+| --- | --- | --- |
+| ![Wochenplan mit sieben Gerichten, Kost, Dauer und Kalorien je Portion](docs/bilder/woche.png) | ![Rezept mit Zutaten, Zuordnung zu Lebensmitteln und Nährwerten je Portion](docs/bilder/rezept.png) | ![Einkaufsliste nach Regalen sortiert](docs/bilder/einkauf.png) |
+| Das Modell wählt aus dem Pool und sagt, warum. | Jede Zutat einem Lebensmittel zugeordnet, Nährwerte je Portion. | Hochgerechnet, zusammengefasst, nach Regal sortiert. |
+
+| Lebensmitteldatenbank |
+| --- |
+| ![Suche in Grundlebensmitteln und Markenprodukten mit Kalorien und Makroverteilung](docs/bilder/lebensmittel.png) |
+| BLS 4.0 mit 138 Nährstoffen und Millionen Markenprodukte, durchsuchbar nach Name, Marke oder Barcode. |
+
 * **Wochenplan**: vom Modell gewählt, einzelne Tage tauschen oder selbst
   belegen, abhaken, was gekocht wurde.
 * **Einkaufsliste**: auf die Personenzahl hochgerechnet, zusammengefasst,
